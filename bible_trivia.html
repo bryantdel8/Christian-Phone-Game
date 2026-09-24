@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scripture Quest</title>
+<style>
+:root{
+  --bg:#181330; --card:#241d47; --accent:#f2c94c; --accent2:#6fe0ab; --accent3:#ff8a65;
+  --text:#f4f0ff; --sub:#a99bd6; --wrong:#ef5f6a; --right:#4bd08a; --line:#3a3266;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f3efff; --card:#ffffff; --accent:#b8860b; --accent2:#1f9d63; --accent3:#e0672e;
+    --text:#251f3d; --sub:#6b6190; --wrong:#c62f2f; --right:#1e8a4c; --line:#e0d9f7;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181330; --card:#241d47; --accent:#f2c94c; --accent2:#6fe0ab; --accent3:#ff8a65;
+  --text:#f4f0ff; --sub:#a99bd6; --wrong:#ef5f6a; --right:#4bd08a; --line:#3a3266;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Georgia,'Times New Roman',serif; display:flex; justify-content:center;
+  padding:14px; padding-top:calc(14px + env(safe-area-inset-top,0px)); padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));
+}
+.wrap{width:100%; max-width:480px;}
+h1{ text-align:center; font-size:1.5em; margin:2px 0 0; color:var(--accent); letter-spacing:0.5px;}
+.sub{text-align:center; color:var(--sub); margin-bottom:10px; font-size:0.85em;}
+.topbar{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  background:var(--card); border-radius:14px; padding:10px 14px; margin-bottom:12px;
+  font-size:0.85em; box-shadow:0 4px 14px rgba(0,0,0,0.15);
+}
+.topbar .pill{display:flex; align-items:center; gap:4px; white-space:nowrap;}
+.xpbar{flex:1; height:8px; background:var(--line); border-radius:6px; margin:0 8px; overflow:hidden;}
+.xpbar-fill{height:100%; background:var(--accent2); border-radius:6px; transition:width .4s;}
+.card{ background:var(--card); border-radius:16px; padding:18px; box-shadow:0 6px 20px rgba(0,0,0,0.18); margin-bottom:12px;}
+.hidden{display:none !important;}
+.backrow{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.backbtn{background:none; border:none; color:var(--sub); font-size:1.3em; cursor:pointer; padding:0 4px;}
+.stepTitle{font-weight:bold; font-size:1.05em;}
+.stepSub{color:var(--sub); font-size:0.82em; margin-top:-6px; margin-bottom:10px;}
+.book-grid{display:flex; flex-wrap:wrap; gap:8px; max-height:52vh; overflow-y:auto; padding-bottom:2px;}
+.book-chip{
+  padding:10px 14px; border-radius:14px; border:1.5px solid var(--line); background:transparent;
+  color:var(--text); cursor:pointer; font-size:0.9em; font-family:inherit; position:relative;
+}
+.book-chip .badge{position:absolute; top:-8px; right:-4px; font-size:0.65em; background:var(--accent); color:#221a08; border-radius:8px; padding:1px 5px; font-weight:bold;}
+.mode-card{
+  display:flex; align-items:center; gap:14px; padding:16px; border-radius:14px; border:2px solid var(--line);
+  background:transparent; color:var(--text); cursor:pointer; width:100%; text-align:left; margin-bottom:10px; font-family:inherit;
+}
+.mode-card .em{font-size:1.8em;}
+.mode-card .mname{font-weight:bold; font-size:1.02em;}
+.mode-card .mdesc{color:var(--sub); font-size:0.8em; margin-top:2px;}
+.mode-card:disabled, .mode-card.disabled{opacity:0.4; cursor:default;}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
+.chip{ padding:10px 16px; border-radius:20px; border:1.5px solid var(--sub); background:transparent; color:var(--text); cursor:pointer; font-size:0.92em; font-family:inherit; position:relative;}
+.chip.selected{background:var(--accent); border-color:var(--accent); color:#221a08; font-weight:bold;}
+.chip .mini-star{display:block; font-size:0.7em; margin-top:2px;}
+button.primary{ width:100%; padding:14px; border-radius:12px; border:none; background:var(--accent2); color:#0e2418; font-weight:bold; font-size:1.02em; cursor:pointer; margin-top:8px;}
+button.primary:disabled{opacity:0.5;}
+label.toggle{display:flex; align-items:center; gap:8px; font-size:0.85em; color:var(--sub); margin-top:12px; cursor:pointer;}
+.hud{display:flex; justify-content:space-between; align-items:center; color:var(--sub); font-size:0.85em; margin-bottom:8px;}
+.combo{color:var(--accent); font-weight:bold; font-size:0.85em; min-height:18px; margin-bottom:4px;}
+.qref{color:var(--accent); font-size:0.82em; margin-bottom:6px;}
+.qtext{font-size:1.12em; margin-bottom:14px; line-height:1.4;}
+.opt{ display:block; width:100%; text-align:left; padding:12px 14px; margin-bottom:8px; border-radius:10px; border:1.5px solid var(--sub); background:transparent; color:var(--text); font-family:inherit; font-size:1em; cursor:pointer;}
+.opt.right{background:var(--right); border-color:var(--right); color:#0e2418; font-weight:bold;}
+.opt.wrong{background:var(--wrong); border-color:var(--wrong); color:#2b0e0e; font-weight:bold;}
+.opt:disabled{cursor:default;}
+.feedback{min-height:20px; font-size:0.9em; margin-bottom:6px; color:var(--sub);}
+.order-strip{min-height:52px; border:2px dashed var(--sub); border-radius:10px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+.order-bank{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+.tok{padding:8px 12px; border-radius:8px; background:var(--line); color:var(--text); cursor:pointer; font-size:0.95em; border:none; font-family:inherit;}
+.tok.placed{background:var(--accent); color:#221a08;}
+.tok:disabled{opacity:0.4; cursor:default;}
+.big-emoji{font-size:2.4em; text-align:center; margin-bottom:6px;}
+.result{text-align:center;}
+.result .stars-big{font-size:2em; margin:8px 0;}
+.result .score{font-size:1.7em; color:var(--accent); margin:6px 0;}
+.result .rewards{display:flex; justify-content:center; gap:18px; color:var(--sub); font-size:0.95em; margin:10px 0;}
+footer{text-align:center; color:var(--sub); font-size:0.72em; margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📖 Scripture Quest</h1>
+  <div class="sub">Bible knowledge · ESV reference</div>
+
+  <div class="topbar">
+    <div class="pill">🔥 <span id="streakVal">0</span></div>
+    <div class="pill">Lv <span id="xpLevelVal">1</span></div>
+    <div class="xpbar"><div class="xpbar-fill" id="xpFill" style="width:0%"></div></div>
+    <div class="pill">🪙 <span id="coinVal">0</span></div>
+  </div>
+
+  <div id="stepBook" class="card">
+    <div class="stepTitle">1. Choose a book</div>
+    <div class="stepSub">All 66 books, every mode — hand-written questions, no AI at play time.</div>
+    <div class="book-grid" id="bookGrid"></div>
+  </div>
+
+  <div id="stepMode" class="card hidden">
+    <div class="backrow"><button class="backbtn" id="backToBook">←</button><div class="stepTitle" id="modeBookLabel"></div></div>
+    <div class="stepSub">2. Choose a game mode</div>
+    <button class="mode-card" id="modeTrivia">
+      <span class="em">🧠</span>
+      <span><span class="mname">Trivia Challenge</span><br><span class="mdesc">Multiple-choice questions about people, places &amp; events</span></span>
+    </button>
+    <button class="mode-card" id="modeFill">
+      <span class="em">✏️</span>
+      <span><span class="mname">Fill in the Blank</span><br><span class="mdesc">Complete the missing word in real ESV verses</span></span>
+    </button>
+    <button class="mode-card" id="modeOrder">
+      <span class="em">🧩</span>
+      <span><span class="mname">Verse Builder</span><br><span class="mdesc">Tap words into place to rebuild a verse</span></span>
+    </button>
+  </div>
+
+  <div id="stepDiff" class="card hidden">
+    <div class="backrow"><button class="backbtn" id="backToMode">←</button><div class="stepTitle" id="diffLabel"></div></div>
+    <div class="stepSub">3. Choose difficulty</div>
+    <div class="chip-row" id="diffChips">
+      <button class="chip" data-diff="easy">Easy</button>
+      <button class="chip" data-diff="medium">Medium</button>
+      <button class="chip" data-diff="hard">Hard</button>
+    </div>
+    <div id="aiStatus" style="font-size:0.78em;color:var(--sub);margin-top:4px;min-height:16px;"></div>
+    <button class="primary" id="playBtn" disabled>Play</button>
+  </div>
+
+  <div id="game" class="card hidden">
+    <div class="hud">
+      <span id="progress">Q1/8</span>
+      <span id="livesLive">❤️❤️❤️</span>
+    </div>
+    <div class="combo" id="comboLine"></div>
+    <div class="qref" id="qref"></div>
+    <div class="qtext" id="qtext"></div>
+    <div id="mcArea"></div>
+    <div id="orderArea" class="hidden">
+      <div class="order-strip" id="orderStrip"></div>
+      <div class="order-bank" id="orderBank"></div>
+      <button class="primary" id="orderCheckBtn" disabled>Check</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <button class="primary hidden" id="nextBtn">Next →</button>
+  </div>
+
+  <div id="result" class="card result hidden">
+    <div class="big-emoji" id="resultEmoji">🎉</div>
+    <div id="resultTitle" style="font-size:1.2em;font-weight:bold;"></div>
+    <div class="stars-big" id="resultStars"></div>
+    <div class="score" id="finalScore"></div>
+    <div class="rewards"><span id="coinsEarnedLine"></span><span id="xpEarnedLine"></span></div>
+    <div id="resultSub" style="color:var(--sub);font-size:0.85em;"></div>
+    <button class="primary" id="playAgainBtn">Play Again</button>
+    <button class="primary" id="chooseAnotherBtn" style="background:transparent;border:1.5px solid var(--sub);color:var(--text);">Choose Another</button>
+  </div>
+
+  <footer>Text references from the ESV (English Standard Version)</footer>
+</div>
+
+<script>
+/* =========================================================
+   QUESTION BANK  (t: mc | fill | order) — hand-checked, ESV-referenced
+   ========================================================= */
+const BANK = {
+Genesis: { easy: [
+    {t:"mc", ref:"Genesis 1:1", q:"\"In the beginning, God created the ___ and the earth.\"", opts:["heavens","stars","waters","light"], a:"heavens"},
+    {t:"mc", ref:"Genesis 3", q:"What fruit is commonly associated with the tree in Eden, though not named in the text?", opts:["Apple","Fig","Pomegranate","Grape"], a:"Apple"},
+    {t:"mc", ref:"Genesis 6-9", q:"Who built the ark?", opts:["Noah","Abraham","Moses","Enoch"], a:"Noah"},
+    {t:"order", ref:"Genesis 1:3", verse:"And God said, \"Let there be light,\" and there was light.", q:"Arrange the verse in order:"},
+    {t:"fill", ref:"Genesis 1:27", q:"\"...in the image of God he created him; male and ___ he created them.\"", opts:["female","man","woman","spirit"], a:"female"},
+    {t:"fill", ref:"Genesis 2:7", q:"\"...and the man became a living ___.\"", opts:["creature","soul","spirit","being"], a:"creature"},
+    {t:"mc", ref:"Genesis 2:21-22", q:"What did God use to form the first woman?", opts:["One of Adam's ribs","Dust from the ground","Clay","A bone from Adam's foot"], a:"One of Adam's ribs"},
+    {t:"mc", ref:"Genesis 2:9,17", q:"What were the two special trees in the Garden of Eden?", opts:["Tree of Life and Tree of the Knowledge of Good and Evil","Tree of Wisdom and Tree of Death","Tree of Eden and Tree of Adam","Tree of Fruit and Tree of Thorns"], a:"Tree of Life and Tree of the Knowledge of Good and Evil"},
+    {t:"mc", ref:"Genesis 3:21", q:"What did God make for Adam and Eve to wear after they sinned?", opts:["Garments of skin","Fig leaves","Linen robes","Nothing"], a:"Garments of skin"},
+    {t:"mc", ref:"Genesis 4:2", q:"What was Cain's occupation?", opts:["Tiller of the ground (farmer)","Shepherd","Fisherman","Builder"], a:"Tiller of the ground (farmer)"},
+    {t:"mc", ref:"Genesis 7:13,2 Peter 2:5", q:"How many people were saved on Noah's ark?", opts:["8","4","6","10"], a:"8"},
+    {t:"mc", ref:"Genesis 9:13", q:"What sign did God give Noah as a promise never to flood the earth again?", opts:["A rainbow","A dove","An olive branch","A star"], a:"A rainbow"},
+    {t:"fill", ref:"Genesis 9:13", q:"\"I have set my ___ in the cloud, and it shall be a sign of the covenant...\"", opts:["bow","rainbow","light","promise"], a:"bow"},
+    {t:"mc", ref:"Genesis 11:4", q:"Genesis 11 says the people wanted to build a tower reaching where?", opts:["To the heavens","Under the sea","To the moon","Into the desert"], a:"To the heavens"},
+    {t:"mc", ref:"Genesis 12:1", q:"God called Abram to leave his home and go to which land?", opts:["Canaan","Egypt","Babylon","Moab"], a:"Canaan"},
+    {t:"order", ref:"Genesis 15:6", verse:"And he believed the LORD, and he counted it to him as righteousness.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"mc", ref:"Genesis 4:8", q:"Who did Cain kill?", opts:["Abel","Seth","Enoch","Lamech"], a:"Abel"},
+    {t:"mc", ref:"Genesis 11:1-9", q:"What structure did people build that God confused their language over?", opts:["Tower of Babel","Ark","Temple","Ziggurat of Ur"], a:"Tower of Babel"},
+    {t:"mc", ref:"Genesis 22", q:"Whom did God ask Abraham to sacrifice?", opts:["Isaac","Ishmael","Jacob","Esau"], a:"Isaac"},
+    {t:"mc", ref:"Genesis 11:31", q:"What was Abram's original hometown before he journeyed to Canaan?", opts:["Ur of the Chaldeans","Haran","Bethel","Nineveh"], a:"Ur of the Chaldeans"},
+    {t:"mc", ref:"Genesis 16:15", q:"Who was the mother of Ishmael?", opts:["Hagar","Sarah","Rebekah","Leah"], a:"Hagar"},
+    {t:"mc", ref:"Genesis 19:26", q:"What happened to Lot's wife when she looked back at the destruction of Sodom?", opts:["She turned into a pillar of salt","She was struck blind","She died instantly","She turned to stone"], a:"She turned into a pillar of salt"},
+    {t:"mc", ref:"Genesis 21:1-3", q:"What was the name of Abraham and Sarah's son, born to them in their old age?", opts:["Isaac","Ishmael","Jacob","Esau"], a:"Isaac"},
+    {t:"mc", ref:"Genesis 24", q:"Who was chosen as Isaac's wife after Abraham's servant found her at a well?", opts:["Rebekah","Rachel","Leah","Tamar"], a:"Rebekah"},
+    {t:"mc", ref:"Genesis 25:29-34", q:"Esau sold his birthright to Jacob for what?", opts:["A bowl of stew","A tent","Silver coins","Livestock"], a:"A bowl of stew"},
+    {t:"mc", ref:"Genesis 27", q:"Whose blessing did Jacob receive by disguising himself as his brother Esau?", opts:["Isaac's","Abraham's","Laban's","God's audible blessing"], a:"Isaac's"},
+    {t:"mc", ref:"Genesis 29", q:"Jacob worked seven years for Laban to marry Rachel, but was tricked into marrying which sister first?", opts:["Leah","Dinah","Tamar","Zilpah"], a:"Leah"},
+    {t:"mc", ref:"Genesis 37:31", q:"What did Joseph's brothers do to his special robe before selling him into slavery?", opts:["Dipped it in goat's blood","Burned it","Gave it to Reuben","Sold it separately"], a:"Dipped it in goat's blood"},
+    {t:"mc", ref:"Genesis 39", q:"Who falsely accused Joseph in Egypt, leading to his imprisonment?", opts:["Potiphar's wife","Pharaoh","The cupbearer","The baker"], a:"Potiphar's wife"},
+    {t:"fill", ref:"Genesis 17:5", q:"\"...your name shall be Abraham, for I have made you the father of a multitude of ___.\"", opts:["nations","peoples","kings","tribes"], a:"nations"},
+    {t:"fill", ref:"Genesis 2:24", q:"\"...and hold fast to his wife, and they shall become one ___.\"", opts:["flesh","body","spirit","people"], a:"flesh"},
+  ], hard: [
+    {t:"mc", ref:"Genesis 37", q:"How many brothers did Joseph have (not counting himself)?", opts:["11","10","12","9"], a:"11"},
+    {t:"mc", ref:"Genesis 32:28", q:"What new name was Jacob given after wrestling with God?", opts:["Israel","Judah","Levi","Ephraim"], a:"Israel"},
+    {t:"mc", ref:"Genesis 41", q:"What position did Pharaoh give Joseph after he interpreted his dreams?", opts:["Ruler over all Egypt","High Priest","Chief cupbearer","General of the army"], a:"Ruler over all Egypt"},
+    {t:"mc", ref:"Genesis 14:18-20", q:"Who was the mysterious king and priest of Salem who blessed Abram?", opts:["Melchizedek","Abimelech","Chedorlaomer","Lot"], a:"Melchizedek"},
+    {t:"mc", ref:"Genesis 18:22-33", q:"Who negotiated with God, asking Him to spare Sodom for the sake of a few righteous people?", opts:["Abraham","Lot","Isaac","Moses"], a:"Abraham"},
+    {t:"mc", ref:"Genesis 29:34", q:"Which of Jacob's sons became the ancestor of the priestly line (Levites)?", opts:["Levi","Judah","Reuben","Simeon"], a:"Levi"},
+    {t:"mc", ref:"Genesis 38", q:"Judah's daughter-in-law Tamar bore him twin sons. What were their names?", opts:["Perez and Zerah","Ephraim and Manasseh","Er and Onan","Ham and Shem"], a:"Perez and Zerah"},
+    {t:"mc", ref:"Genesis 40", q:"Before interpreting Pharaoh's dreams, whose dreams did Joseph interpret in prison?", opts:["The cupbearer's and the baker's","Two guards'","Pharaoh's sons'","The chief steward's"], a:"The cupbearer's and the baker's"},
+    {t:"mc", ref:"Genesis 41:1-7", q:"Pharaoh's dream featured seven plump cows and seven lean cows, plus seven full heads of grain and seven what?", opts:["Withered, thin heads of grain","Locusts","Empty jars","Dead fish"], a:"Withered, thin heads of grain"},
+    {t:"mc", ref:"Genesis 48:13-20", q:"Jacob blessed Joseph's two sons, giving the greater blessing to the younger over the older. Name them in birth order.", opts:["Manasseh (older), then Ephraim (younger)","Ephraim (older), then Manasseh (younger)","Reuben, then Simeon","Levi, then Judah"], a:"Manasseh (older), then Ephraim (younger)"},
+    {t:"mc", ref:"Genesis 49:10", q:"On his deathbed, Jacob prophesied that the ruling scepter would belong to which son?", opts:["Judah","Reuben","Joseph","Benjamin"], a:"Judah"},
+    {t:"mc", ref:"Genesis 23", q:"Abraham purchased a burial cave for Sarah at which location?", opts:["The cave of Machpelah","Mount Moriah","Bethel","Hebron's tower"], a:"The cave of Machpelah"},
+    {t:"fill", ref:"Genesis 50:20", q:"\"...you meant evil against me, but God meant it for ___...\"", opts:["good","peace","life","mercy"], a:"good"},
+    {t:"order", ref:"Genesis 18:14", verse:"Is anything too hard for the LORD?", q:"Arrange the verse in order:"},
+  ]},
+Exodus: { easy: [
+    {t:"mc", ref:"Exodus 2", q:"As a baby, Moses was found floating in a basket on which river?", opts:["Nile","Jordan","Euphrates","Tigris"], a:"Nile"},
+    {t:"mc", ref:"Exodus 3", q:"What was burning but not consumed when God spoke to Moses?", opts:["A bush","A tree","An altar","A lamp"], a:"A bush"},
+    {t:"mc", ref:"Exodus 20", q:"How many commandments did God give at Sinai?", opts:["10","7","12","5"], a:"10"},
+    {t:"mc", ref:"Exodus 2", q:"Who was Moses' sister, who watched over the basket and later led a song of praise after the Red Sea crossing?", opts:["Miriam","Zipporah","Jochebed","Deborah"], a:"Miriam"},
+    {t:"mc", ref:"Exodus 2:21", q:"What was the name of Moses' wife?", opts:["Zipporah","Miriam","Rebekah","Rahab"], a:"Zipporah"},
+    {t:"mc", ref:"Exodus 3:14", q:"What did God call Himself when Moses asked His name at the burning bush?", opts:["\"I AM WHO I AM\"","\"The Almighty\"","\"El Shaddai\"","\"Adonai\""], a:"\"I AM WHO I AM\""},
+    {t:"mc", ref:"Exodus 7:20", q:"What happened to the Nile River in the first plague?", opts:["It turned to blood","It dried up completely","It flooded the land","It froze"], a:"It turned to blood"},
+    {t:"mc", ref:"Exodus 11-12", q:"What was the last and most devastating of the ten plagues?", opts:["The death of the firstborn","Total darkness","Locusts","Hail"], a:"The death of the firstborn"},
+    {t:"mc", ref:"Exodus 12:7", q:"What were the Israelites told to put on their doorposts so the plague of death would pass over their homes?", opts:["The blood of a lamb","Oil","Ashes","A written blessing"], a:"The blood of a lamb"},
+    {t:"fill", ref:"Exodus 20:12", q:"\"Honor your father and your ___, that your days may be long in the land...\"", opts:["mother","family","household","people"], a:"mother"},
+    {t:"order", ref:"Exodus 20:13", verse:"You shall not murder.", q:"Arrange the verse in order:"},
+    {t:"fill", ref:"Exodus 13:21", q:"\"...and by night in a pillar of ___ to give them light.\"", opts:["fire","cloud","smoke","light"], a:"fire"},
+    {t:"mc", ref:"Exodus 32", q:"Who made the golden calf while Moses was up on Mount Sinai?", opts:["Aaron","Joshua","Hur","Nadab"], a:"Aaron"},
+    {t:"mc", ref:"Exodus 24:18,34:28", q:"How many days did Moses stay on Mount Sinai receiving the Ten Commandments?", opts:["40","7","3","70"], a:"40"},
+  ], medium: [
+    {t:"mc", ref:"Exodus 7-12", q:"How many plagues struck Egypt?", opts:["10","7","12","9"], a:"10"},
+    {t:"mc", ref:"Exodus 14", q:"What body of water did Israel cross on dry ground?", opts:["Red Sea","Jordan River","Sea of Galilee","Dead Sea"], a:"Red Sea"},
+    {t:"mc", ref:"Exodus 16", q:"What bread-like food did God provide daily in the wilderness?", opts:["Manna","Quail","Barley loaves","Honeycomb"], a:"Manna"},
+    {t:"order", ref:"Exodus 20:3", verse:"You shall have no other gods before me.", q:"Arrange the verse in order:"},
+    {t:"mc", ref:"Exodus 15:23-25", q:"At Marah, God made bitter water sweet for the Israelites by having Moses do what?", opts:["Cast a piece of wood into the water","Strike the water with his staff","Pray over it for seven days","Pour salt into it"], a:"Cast a piece of wood into the water"},
+    {t:"mc", ref:"Exodus 17:6", q:"Where did water come from when Moses struck a rock with his staff at Horeb?", opts:["Out of the rock itself","A hidden spring nearby","Rain sent by God","A river redirected by angels"], a:"Out of the rock itself"},
+    {t:"mc", ref:"Exodus 18", q:"Who advised Moses to appoint other judges to help him lead the people?", opts:["Jethro, his father-in-law","Aaron, his brother","Joshua, his aide","Caleb"], a:"Jethro, his father-in-law"},
+    {t:"mc", ref:"Exodus 25:10-22", q:"What was the name of the sacred gold-covered chest that held the Ten Commandment tablets?", opts:["The Ark of the Covenant","The Mercy Chest","The Tabernacle Box","The Sinai Ark"], a:"The Ark of the Covenant"},
+    {t:"mc", ref:"Exodus 31:1-6", q:"Which two skilled craftsmen were filled with God's Spirit to build the tabernacle?", opts:["Bezalel and Oholiab","Aaron and Hur","Caleb and Joshua","Nadab and Abihu"], a:"Bezalel and Oholiab"},
+    {t:"mc", ref:"Exodus 40:34-35", q:"What covered the tabernacle once it was completed, showing God's presence?", opts:["A cloud (the glory of the LORD)","A rainbow","A pillar of fire only","A flock of doves"], a:"A cloud (the glory of the LORD)"},
+    {t:"mc", ref:"Exodus 25:31-40", q:"What object gave light inside the tabernacle's Holy Place?", opts:["The golden lampstand","Torches on the walls","Oil lanterns at the door","A pillar of fire"], a:"The golden lampstand"},
+    {t:"mc", ref:"Exodus 25:30", q:"What kind of bread was kept on a table in the tabernacle's Holy Place?", opts:["The bread of the Presence (showbread)","Unleavened Passover bread","Manna cakes","Barley loaves"], a:"The bread of the Presence (showbread)"},
+    {t:"fill", ref:"Exodus 16:4", q:"\"...I am about to rain ___ from heaven for you.\"", opts:["bread","manna","food","water"], a:"bread"},
+    {t:"fill", ref:"Exodus 34:6", q:"\"...a God merciful and gracious, slow to ___, and abounding in steadfast love.\"", opts:["anger","judgment","wrath","speak"], a:"anger"},
+    {t:"mc", ref:"Exodus 16:22-26", q:"Why did the Israelites gather twice as much manna on the sixth day?", opts:["None would fall on the Sabbath","It spoiled faster otherwise","God commanded a feast","They were traveling that week"], a:"None would fall on the Sabbath"},
+    {t:"order", ref:"Exodus 20:15", verse:"You shall not steal.", q:"Arrange the verse in order:"},
+  ], hard: [
+    {t:"mc", ref:"Exodus 4:14", q:"Who was appointed as Moses' spokesman to Pharaoh?", opts:["Aaron","Joshua","Caleb","Miriam"], a:"Aaron"},
+    {t:"mc", ref:"Exodus 25", q:"What object was placed alongside the tablets in the Ark of the Covenant (per Hebrews 9)?", opts:["A jar of manna and Aaron's staff","A crown","A scroll of Isaiah","Nothing else"], a:"A jar of manna and Aaron's staff"},
+    {t:"mc", ref:"Exodus 17:12", q:"Who held up Moses' hands during the battle with Amalek?", opts:["Aaron and Hur","Joshua and Caleb","Aaron and Miriam","Hur and Joshua"], a:"Aaron and Hur"},
+    {t:"mc", ref:"Exodus 6:20", q:"What was the name of Moses' mother?", opts:["Jochebed","Miriam","Zipporah","Elisheba"], a:"Jochebed"},
+    {t:"mc", ref:"Exodus 4:3", q:"What sign did God first give Moses, turning his staff into what?", opts:["A serpent","A rod of gold","A flowering branch","A sword"], a:"A serpent"},
+    {t:"mc", ref:"Exodus 4:6-7", q:"What second sign did God give Moses, involving his own hand?", opts:["It turned leprous, then was healed","It burst into flame","It grew a scar","It turned to stone"], a:"It turned leprous, then was healed"},
+    {t:"mc", ref:"Exodus 12:37", q:"About how many Israelite men, not counting women and children, left Egypt in the Exodus?", opts:["About 600,000","About 6,000","About 60,000","About 1 million"], a:"About 600,000"},
+    {t:"mc", ref:"Exodus 12:35-36", q:"What did the Israelites take from the Egyptians as they left, per God's provision?", opts:["Silver, gold, and clothing","Livestock only","Weapons","Nothing at all"], a:"Silver, gold, and clothing"},
+    {t:"mc", ref:"Exodus 31:2", q:"From which tribe was Bezalel, the chief craftsman of the tabernacle?", opts:["Judah","Levi","Dan","Ephraim"], a:"Judah"},
+    {t:"mc", ref:"Exodus 32:19", q:"What did Moses break when he came down and saw the golden calf?", opts:["The stone tablets","The Ark of the Covenant","The altar","His staff"], a:"The stone tablets"},
+    {t:"mc", ref:"Exodus 34:33-35", q:"What did Moses wear over his face after speaking with God, because it shone?", opts:["A veil","A crown","A hood","Nothing—he hid in the tent"], a:"A veil"},
+    {t:"mc", ref:"Exodus 28:15-21", q:"What was on the high priest's breastplate, representing Israel?", opts:["Twelve stones for the twelve tribes","A single sapphire","Golden bells only","An image of the Ark"], a:"Twelve stones for the twelve tribes"},
+    {t:"order", ref:"Exodus 20:14", verse:"You shall not commit adultery.", q:"Arrange the verse in order:"},
+    {t:"mc", ref:"Exodus 21:24", q:"What legal principle in Exodus 21 prescribes proportional retribution, such as \"eye for eye\"?", opts:["Lex talionis (measure-for-measure justice)","Trial by ordeal","Priestly arbitration","Sanctuary law"], a:"Lex talionis (measure-for-measure justice)"},
+  ]},
+Deuteronomy: { easy: [
+    {t:"fill", ref:"Deuteronomy 6:5", q:"\"You shall love the LORD your God with all your heart and with all your soul and with all your ___.\"", opts:["might","body","mind","strength alone"], a:"might"},
+    {t:"mc", ref:"Deuteronomy 34", q:"Who died on Mount Nebo without entering the Promised Land?", opts:["Moses","Aaron","Joshua","Caleb"], a:"Moses"},
+    {t:"mc", ref:"Deuteronomy", q:"Deuteronomy consists mainly of what, given by Moses to Israel before his death?", opts:["Farewell sermons/addresses","Genealogies","Psalms of praise","Prophetic visions"], a:"Farewell sermons/addresses"},
+    {t:"fill", ref:"Deuteronomy 6:4", q:"\"Hear, O Israel: The LORD our God, the LORD is ___.\"", opts:["one","holy","great","near"], a:"one"},
+    {t:"mc", ref:"Deuteronomy 6:4", q:"What is the name commonly given to the great confession, \"Hear, O Israel: The LORD our God, the LORD is one\"?", opts:["The Shema","The Shalom","The Covenant","The Benediction"], a:"The Shema"},
+    {t:"order", ref:"Deuteronomy 5:7", verse:"You shall have no other gods before me.", q:"Arrange the verse in order:"},
+    {t:"mc", ref:"Deuteronomy", q:"Deuteronomy largely restates and expands which earlier body of law given at Sinai?", opts:["The Ten Commandments / Law of Moses","The Psalms","The wisdom of Solomon","The priestly genealogies"], a:"The Ten Commandments / Law of Moses"},
+  ], medium: [
+    {t:"fill", ref:"Deuteronomy 31:6", q:"\"...for it is the LORD your God who goes with you. He will not leave you or ___ you.\"", opts:["forsake","forget","abandon","betray"], a:"forsake"},
+    {t:"mc", ref:"Deuteronomy 8:3", q:"Man does not live by bread alone, but by every word that comes from the mouth of whom?", opts:["The LORD","The prophets","Moses","The angels"], a:"The LORD"},
+    {t:"fill", ref:"Deuteronomy 10:12", q:"\"...but to fear the LORD your God, to walk in all his ways, to love him, to ___ the LORD your God with all your heart...\"", opts:["serve","obey","follow","trust"], a:"serve"},
+    {t:"mc", ref:"Deuteronomy 28", q:"Deuteronomy 28 lists blessings for obedience and what for disobedience?", opts:["Curses","Silence","Delay","Exile only"], a:"Curses"},
+    {t:"fill", ref:"Deuteronomy 30:19", q:"\"...Therefore choose ___, that you and your offspring may live.\"", opts:["life","wisely","well","God"], a:"life"},
+    {t:"mc", ref:"Deuteronomy 34:7", q:"How old was Moses when he died, according to Deuteronomy 34:7?", opts:["120","100","80","150"], a:"120"},
+    {t:"fill", ref:"Deuteronomy 34:7", q:"\"Moses was 120 years old when he died. His eye was ___, and his vigor unabated.\"", opts:["undimmed","closed","weak","failing"], a:"undimmed"},
+  ], hard: [
+    {t:"mc", ref:"Deuteronomy 18:15", q:"Moses said God would raise up a prophet like himself from among whom?", opts:["Their own brothers","The Levites only","The nations","The elders"], a:"Their own brothers"},
+    {t:"mc", ref:"Matthew 4 / Deuteronomy", q:"Which New Testament figure quotes Deuteronomy three times to rebuff Satan's temptations in the wilderness?", opts:["Jesus","Paul","Peter","John the Baptist"], a:"Jesus"},
+    {t:"order", ref:"Deuteronomy 6:5", verse:"You shall love the LORD your God with all your heart and with all your soul and with all your might.", q:"Arrange the verse in order:"},
+    {t:"fill", ref:"Deuteronomy 32:4", q:"\"The ___, his work is perfect, for all his ways are justice.\"", opts:["Rock","Judge","Shepherd","Potter"], a:"Rock"},
+    {t:"mc", ref:"Deuteronomy", q:"Deuteronomy repeatedly commands Israel to remember that they were once what, in Egypt?", opts:["Slaves","Kings","Strangers only","Wanderers"], a:"Slaves"},
+    {t:"mc", ref:"Deuteronomy 18:15,Acts 3:22", q:"The coming prophet \"like Moses\" foretold in Deuteronomy 18:15 is understood in the New Testament to point ultimately to whom?", opts:["Jesus Christ","John the Baptist","Elijah","Isaiah"], a:"Jesus Christ"},
+  ]},
+Joshua: { easy: [
+    {t:"fill", ref:"Joshua 1:9", q:"\"Have I not commanded you? Be strong and of good ___.\"", opts:["courage","faith","heart","hope"], a:"courage"},
+    {t:"mc", ref:"Joshua", q:"Who led Israel into the Promised Land after Moses died?", opts:["Joshua","Caleb","Aaron","Samuel"], a:"Joshua"},
+    {t:"fill", ref:"Joshua 1:8", q:"\"...you shall meditate on it day and ___.\"", opts:["night","always","forever","often"], a:"night"},
+    {t:"mc", ref:"Joshua 2:15", q:"What did Rahab hang from her window as a sign for the spies to spare her house?", opts:["A scarlet cord","A white flag","A gold ring","A lamp"], a:"A scarlet cord"},
+    {t:"mc", ref:"Joshua 4", q:"What did Joshua set up as a memorial at Gilgal after Israel crossed the Jordan?", opts:["Twelve stones","An altar of gold","A bronze serpent","A tent of meeting"], a:"Twelve stones"},
+  ], medium: [
+    {t:"mc", ref:"Joshua 6", q:"Whose walls fell after the Israelites marched around it seven times?", opts:["Jericho","Ai","Jerusalem","Hebron"], a:"Jericho"},
+    {t:"mc", ref:"Joshua 7", q:"Whose sin of keeping forbidden plunder from Jericho caused Israel's defeat at Ai?", opts:["Achan","Achsah","Caleb","Othniel"], a:"Achan"},
+    {t:"mc", ref:"Joshua 9", q:"Which people tricked Israel into a peace treaty using old clothes and moldy bread?", opts:["The Gibeonites","The Amorites","The Jebusites","The Hivites of Shechem"], a:"The Gibeonites"},
+    {t:"mc", ref:"Joshua 3", q:"How did the Israelites cross the Jordan River into Canaan?", opts:["On dry ground, as the river was held back","By boat","By building a bridge","They swam across"], a:"On dry ground, as the river was held back"},
+    {t:"fill", ref:"Joshua 24:15", q:"\"...But as for me and my house, we will ___ the LORD.\"", opts:["serve","follow","obey","worship"], a:"serve"},
+    {t:"mc", ref:"Joshua 10:12-13", q:"What happened to the sun during Joshua's battle at Gibeon, extending the day of victory?", opts:["It stood still","It turned dark","It turned red","It moved backward"], a:"It stood still"},
+    {t:"mc", ref:"Joshua 5", q:"What covenant sign did Joshua have the Israelite men undergo before entering Canaan?", opts:["Circumcision","Fasting","Anointing with oil","Sacrifice of a lamb"], a:"Circumcision"},
+  ], hard: [
+    {t:"mc", ref:"Joshua 2", q:"Who hid the Israelite spies in Jericho and was spared when the city fell?", opts:["Rahab","Deborah","Achsah","Miriam"], a:"Rahab"},
+    {t:"mc", ref:"Joshua 13", q:"Which half-tribe, along with Reuben and Gad, was given land east of the Jordan?", opts:["Manasseh","Ephraim","Levi","Benjamin"], a:"Manasseh"},
+    {t:"mc", ref:"Joshua 24:29", q:"How old was Joshua when he died, according to Joshua 24:29?", opts:["110","120","90","100"], a:"110"},
+    {t:"mc", ref:"Matthew 1:5", q:"Rahab, the Jericho woman who hid the spies, is later listed in the New Testament as what?", opts:["An ancestor of Jesus","A judge of Israel","A prophetess","A queen of Israel"], a:"An ancestor of Jesus"},
+    {t:"mc", ref:"Joshua 7:24-26", q:"What was the valley named after Achan's sin and punishment came to be called?", opts:["The Valley of Achor","The Valley of Elah","The Valley of Kidron","The Valley of Jezreel"], a:"The Valley of Achor"},
+  ]},
+Judges: { easy: [
+    {t:"mc", ref:"Judges 6-7", q:"Which judge defeated the Midianites with only 300 men?", opts:["Gideon","Samson","Ehud","Barak"], a:"Gideon"},
+    {t:"mc", ref:"Judges 14", q:"What weapon did Samson use to kill a lion earlier in his story?", opts:["His bare hands","A sword","A jawbone","A sling"], a:"His bare hands"},
+    {t:"mc", ref:"Judges 16", q:"Who cut Samson's hair, leading to his loss of strength?", opts:["Delilah","Jael","Deborah","Orpah"], a:"Delilah"},
+    {t:"mc", ref:"Judges 16:29-30", q:"What did Samson do at the temple of Dagon at the end of his life?", opts:["Pulled down the temple's pillars","Set the temple on fire","Fled the temple","Prayed for the Philistines"], a:"Pulled down the temple's pillars"},
+    {t:"fill", ref:"Judges 21:25", q:"\"In those days there was no king in Israel. Everyone did what was right in his own ___.\"", opts:["eyes","heart","way","mind"], a:"eyes"},
+  ], medium: [
+    {t:"mc", ref:"Judges 13-16", q:"Which judge's great strength was tied to his uncut hair?", opts:["Samson","Gideon","Othniel","Jephthah"], a:"Samson"},
+    {t:"mc", ref:"Judges 4", q:"Which judge was a woman who led Israel and served as a prophetess?", opts:["Deborah","Jael","Miriam","Huldah"], a:"Deborah"},
+    {t:"mc", ref:"Judges 16", q:"What was the true secret of Samson's strength, once revealed to Delilah?", opts:["His uncut hair (a Nazirite vow)","A magic belt","His faith alone","A blessing from his mother"], a:"His uncut hair (a Nazirite vow)"},
+    {t:"mc", ref:"Judges 3", q:"Ehud, a left-handed judge, assassinated which oppressive king of Moab?", opts:["Eglon","Balak","Sisera","Agag"], a:"Eglon"},
+    {t:"mc", ref:"Judges 7", q:"How many men did Gideon start with before God reduced his army to just 300?", opts:["32,000","10,000","1,000","5,000"], a:"32,000"},
+    {t:"mc", ref:"Judges 6", q:"What sign did Gideon ask God for, using wool left outside overnight?", opts:["A fleece test (wet or dry)","A burning bush","A voice from heaven","A written message"], a:"A fleece test (wet or dry)"},
+    {t:"mc", ref:"Judges 11", q:"Which judge made a rash vow that tragically cost him his daughter's life?", opts:["Jephthah","Gideon","Samson","Ehud"], a:"Jephthah"},
+  ], hard: [
+    {t:"mc", ref:"Judges 4", q:"Which woman drove a tent peg through the head of the enemy commander Sisera?", opts:["Jael","Deborah","Delilah","Jezebel"], a:"Jael"},
+    {t:"mc", ref:"Judges 8:30", q:"Which judge is noted for having seventy sons, reflecting his many wives?", opts:["Gideon","Samson","Jephthah","Ehud"], a:"Gideon"},
+    {t:"mc", ref:"Judges 9", q:"Which of Gideon's sons proclaimed himself king and killed sixty-nine of his brothers?", opts:["Abimelech","Jotham","Jether","Joash"], a:"Abimelech"},
+    {t:"mc", ref:"Judges 9:53", q:"What unusual object killed Abimelech, thrown down by a woman from a tower?", opts:["A millstone","A spear","A rock altar stone","A clay jar"], a:"A millstone"},
+    {t:"mc", ref:"Judges", q:"The book of Judges repeatedly describes a cycle of Israel's sin, oppression, crying out to God, and a judge's what?", opts:["Deliverance/rescue","Exile","Silence","Punishment alone"], a:"Deliverance/rescue"},
+  ]},
+Ruth: { easy: [
+    {t:"mc", ref:"Ruth", q:"What foreign land was Ruth from?", opts:["Moab","Edom","Egypt","Aram"], a:"Moab"},
+    {t:"mc", ref:"Ruth 1", q:"What was Ruth's relationship to Naomi?", opts:["Daughter-in-law","Sister","Niece","Cousin"], a:"Daughter-in-law"},
+    {t:"mc", ref:"Ruth 2", q:"In whose field did Ruth glean grain, which led to her meeting her future husband?", opts:["Boaz's field","Elimelech's field","Naomi's field","A stranger's field"], a:"Boaz's field"},
+  ], medium: [
+    {t:"mc", ref:"Ruth 1", q:"Who was Ruth's mother-in-law?", opts:["Naomi","Orpah","Deborah","Miriam"], a:"Naomi"},
+    {t:"fill", ref:"Ruth 1:16", q:"\"...Your people shall be my people, and your God my ___.\"", opts:["God","LORD","strength","hope"], a:"God"},
+    {t:"mc", ref:"Ruth 4", q:"What custom allowed a near relative to marry a widow to preserve her late husband's family line?", opts:["Levirate marriage (kinsman-redeemer)","Jubilee inheritance","Tribal adoption","Temple marriage"], a:"Levirate marriage (kinsman-redeemer)"},
+    {t:"mc", ref:"Ruth 4:7-8", q:"What symbolic act confirmed the transfer of the redeemer's right to Boaz?", opts:["Removing and handing over a sandal","Breaking a piece of bread","Exchanging cloaks","Pouring oil on the ground"], a:"Removing and handing over a sandal"},
+  ], hard: [
+    {t:"mc", ref:"Ruth 4", q:"Ruth married Boaz and became an ancestor of which king?", opts:["David","Saul","Solomon","Josiah"], a:"David"},
+    {t:"mc", ref:"Matthew 1:5", q:"Ruth is listed in the genealogy of Jesus in which New Testament Gospel?", opts:["Matthew","Mark","Luke","John"], a:"Matthew"},
+    {t:"fill", ref:"Ruth 4:17", q:"\"...They named him ___. He was the father of Jesse, the father of David.\"", opts:["Obed","Boaz","Mahlon","Chilion"], a:"Obed"},
+    {t:"mc", ref:"Ruth 1", q:"Who was Naomi's other daughter-in-law, who chose to stay in Moab instead of following her?", opts:["Orpah","Dinah","Tamar","Zilpah"], a:"Orpah"},
+  ]},
+"1 Samuel": { easy: [
+    {t:"mc", ref:"1 Samuel 17", q:"Who killed the giant Goliath?", opts:["David","Saul","Jonathan","Samuel"], a:"David"},
+    {t:"mc", ref:"1 Samuel 1", q:"Who was Samuel's mother, who prayed fervently for a son and dedicated him to the LORD?", opts:["Hannah","Naomi","Abigail","Michal"], a:"Hannah"},
+    {t:"mc", ref:"1 Samuel 1-3", q:"Where did young Samuel serve and grow up, under the priest Eli?", opts:["The tabernacle at Shiloh","The Temple in Jerusalem","Bethel","Ramah"], a:"The tabernacle at Shiloh"},
+    {t:"mc", ref:"1 Samuel 17", q:"What weapon did David use to defeat Goliath?", opts:["A sling and stone","A sword","A spear","A bow and arrow"], a:"A sling and stone"},
+    {t:"mc", ref:"1 Samuel 17", q:"From which Philistine city did the giant Goliath come?", opts:["Gath","Ashdod","Gaza","Ekron"], a:"Gath"},
+    {t:"mc", ref:"1 Samuel 17:51", q:"What did David do after striking Goliath down, to prove his victory?", opts:["Cut off Goliath's head","Took his armor only","Let him go","Buried him"], a:"Cut off Goliath's head"},
+    {t:"mc", ref:"1 Samuel 16:23", q:"What instrument did David play to soothe King Saul's troubled spirit?", opts:["The harp/lyre","The trumpet","The flute","The tambourine"], a:"The harp/lyre"},
+    {t:"mc", ref:"1 Samuel 18-20", q:"Who was David's closest friend, the son of King Saul?", opts:["Jonathan","Ishbosheth","Abner","Mephibosheth"], a:"Jonathan"},
+    {t:"mc", ref:"1 Samuel 9", q:"From which tribe of Israel did King Saul come?", opts:["Benjamin","Judah","Levi","Ephraim"], a:"Benjamin"},
+    {t:"mc", ref:"1 Samuel 16", q:"What was David's job before he became famous, as the youngest son of Jesse?", opts:["A shepherd","A soldier","A priest","A merchant"], a:"A shepherd"},
+    {t:"mc", ref:"1 Samuel 31", q:"How did King Saul die at the battle of Mount Gilboa?", opts:["He fell on his own sword","He was killed by the Philistines in single combat","He died of old age","He was captured and executed"], a:"He fell on his own sword"},
+  ], medium: [
+    {t:"mc", ref:"1 Samuel", q:"Who was Israel's first king?", opts:["Saul","David","Solomon","Samuel"], a:"Saul"},
+    {t:"fill", ref:"1 Samuel 16:7", q:"\"...man looks on the outward appearance, but the LORD looks on the ___.\"", opts:["heart","face","soul","spirit"], a:"heart"},
+    {t:"mc", ref:"1 Samuel 5", q:"What happened to the statue of the god Dagon after the Philistines placed the captured Ark of the Covenant in its temple?", opts:["It fell down before the Ark","It came to life","It was destroyed by fire","Nothing happened"], a:"It fell down before the Ark"},
+    {t:"mc", ref:"1 Samuel 6", q:"How did the Ark of the Covenant return to Israel after the Philistines sent it back?", opts:["On a cart pulled by cows","Carried by priests on foot","By ship","Buried and later found"], a:"On a cart pulled by cows"},
+    {t:"mc", ref:"1 Samuel 15", q:"Why did God reject Saul as king after his war with the Amalekites?", opts:["He disobeyed by sparing King Agag and the best plunder","He refused to fight","He worshiped idols","He fled the battle"], a:"He disobeyed by sparing King Agag and the best plunder"},
+    {t:"mc", ref:"1 Samuel 16", q:"What did Samuel secretly do to David, the youngest son of Jesse, in 1 Samuel 16?", opts:["Anointed him as future king","Gave him Goliath's armor","Made him a priest","Sent him to fight the Philistines"], a:"Anointed him as future king"},
+    {t:"mc", ref:"1 Samuel 17:4", q:"How tall was Goliath, according to 1 Samuel 17?", opts:["Six cubits and a span (about 9-10 feet)","About 6 feet","Ten cubits","Three cubits"], a:"Six cubits and a span (about 9-10 feet)"},
+    {t:"mc", ref:"1 Samuel 18:3", q:"What covenant did David and Jonathan make with each other?", opts:["A covenant of loyal friendship","A covenant of silence","A covenant to overthrow Saul","A covenant of marriage between families"], a:"A covenant of loyal friendship"},
+    {t:"mc", ref:"1 Samuel 22", q:"Where did David hide from Saul while gathering a band of followers, in a well-known cave?", opts:["The cave of Adullam","The cave of Machpelah","The cave at En Gedi","The cave of Makkedah"], a:"The cave of Adullam"},
+    {t:"mc", ref:"1 Samuel 20", q:"Who warned David that Saul intended to kill him, helping him escape?", opts:["Jonathan","Michal","Abner","Samuel"], a:"Jonathan"},
+    {t:"mc", ref:"1 Samuel 24", q:"Whose life did David spare after cutting off a corner of his robe in a cave at En Gedi?", opts:["Saul's","Goliath's","Nabal's","Achish's"], a:"Saul's"},
+    {t:"mc", ref:"1 Samuel 25", q:"Who was the wise woman who intervened to stop David from taking revenge on her foolish husband Nabal?", opts:["Abigail","Michal","Bathsheba","Hannah"], a:"Abigail"},
+  ], hard: [
+    {t:"mc", ref:"1 Samuel", q:"Which prophet anointed both Saul and David as king?", opts:["Samuel","Nathan","Elijah","Gad"], a:"Samuel"},
+    {t:"fill", ref:"1 Samuel 15:22", q:"\"...Behold, to obey is better than ___, and to listen than the fat of rams.\"", opts:["sacrifice","gold","silver","offerings"], a:"sacrifice"},
+    {t:"mc", ref:"1 Samuel 4:19-22", q:"What name, meaning \"the glory has departed,\" was given to Eli's grandson after the Ark was captured and Eli's sons died?", opts:["Ichabod","Ish-bosheth","Jashobeam","Jerubbaal"], a:"Ichabod"},
+    {t:"mc", ref:"1 Samuel 1-4", q:"What were the names of Eli's two corrupt sons, priests at Shiloh?", opts:["Hophni and Phinehas","Nadab and Abihu","Er and Onan","Hur and Nun"], a:"Hophni and Phinehas"},
+    {t:"mc", ref:"1 Samuel 13", q:"What act of disobedience by Saul, offering sacrifices himself rather than waiting for Samuel, foreshadowed his rejection as king?", opts:["Offering an unauthorized burnt offering","Marrying a foreign wife","Refusing to fight the Philistines","Consulting a medium"], a:"Offering an unauthorized burnt offering"},
+    {t:"mc", ref:"1 Samuel 28", q:"Whom did Saul consult through a medium at En-dor, near the end of his life?", opts:["The spirit of the prophet Samuel","The spirit of Moses","An angel of the LORD","A demon impersonating God"], a:"The spirit of the prophet Samuel"},
+    {t:"mc", ref:"1 Samuel 26", q:"In addition to cutting Saul's robe at En Gedi, David later spared Saul's life again by taking what from beside the sleeping king in his camp?", opts:["His spear and water jug","His crown and sword","His robe and sandals","His shield and helmet"], a:"His spear and water jug"},
+    {t:"fill", ref:"1 Samuel 16:13", q:"\"...And the Spirit of the LORD rushed upon David from that day ___.\"", opts:["forward","onward","after","forth"], a:"forward"},
+    {t:"mc", ref:"1 Samuel 22:2", q:"About how many men had gathered around David at the cave of Adullam, according to 1 Samuel 22:2?", opts:["About 400","About 40","About 4,000","About 100"], a:"About 400"},
+    {t:"fill", ref:"1 Samuel 17:47", q:"\"...For the battle is the LORD's, and he will give you into our ___.\"", opts:["hand","hands alone","power","control"], a:"hand"},
+    {t:"mc", ref:"1 Samuel 31", q:"How did Saul's son Jonathan die?", opts:["Killed in battle against the Philistines at Mount Gilboa","Executed by Saul","Died of illness","Killed by David's men"], a:"Killed in battle against the Philistines at Mount Gilboa"},
+  ]},
+"2 Samuel": { easy: [
+    {t:"mc", ref:"2 Samuel 5", q:"What city did David make his capital after becoming king over all Israel?", opts:["Jerusalem","Hebron","Bethlehem","Shechem"], a:"Jerusalem"},
+    {t:"mc", ref:"2 Samuel 1", q:"What did David do to mourn the deaths of Saul and Jonathan?", opts:["Composed and sang a lament","Ordered a week of feasting","Ignored the news","Went into hiding"], a:"Composed and sang a lament"},
+    {t:"mc", ref:"2 Samuel 6", q:"What object did David bring to Jerusalem, dancing before it with great joy?", opts:["The Ark of the Covenant","The bronze serpent","The golden lampstand","The tablets of the Law alone"], a:"The Ark of the Covenant"},
+    {t:"mc", ref:"2 Samuel 6:16", q:"Who despised David for dancing before the Ark, considering it undignified?", opts:["Michal (Saul's daughter)","Bathsheba","Abigail","Nathan"], a:"Michal (Saul's daughter)"},
+    {t:"mc", ref:"2 Samuel 6:6-7", q:"What happened to Uzzah when he touched the Ark of the Covenant improperly?", opts:["He was struck dead","He was blinded","He was banished","Nothing happened"], a:"He was struck dead"},
+    {t:"mc", ref:"2 Samuel 12", q:"Which prophet confronted David about his sin with Bathsheba using a parable about a stolen lamb?", opts:["Nathan","Gad","Samuel","Abiathar"], a:"Nathan"},
+    {t:"mc", ref:"2 Samuel 11", q:"Whom did David have killed in battle to cover up his affair with Bathsheba?", opts:["Uriah, Bathsheba's husband","Joab","Abner","Amasa"], a:"Uriah, Bathsheba's husband"},
+    {t:"mc", ref:"2 Samuel 12:24", q:"What was the name of David and Bathsheba's son who later became king?", opts:["Solomon","Absalom","Amnon","Adonijah"], a:"Solomon"},
+    {t:"mc", ref:"2 Samuel 18:9-15", q:"How did Absalom die, despite David's orders to spare him?", opts:["His hair got caught in a tree, and Joab's men killed him","He drowned crossing the Jordan","He was killed in single combat with David","He died of illness in exile"], a:"His hair got caught in a tree, and Joab's men killed him"},
+    {t:"mc", ref:"2 Samuel 9", q:"Who was Jonathan's crippled son, whom David showed kindness to?", opts:["Mephibosheth","Ish-bosheth","Amasa","Chimham"], a:"Mephibosheth"},
+    {t:"mc", ref:"2 Samuel 7", q:"What covenant did God make with David through the prophet Nathan, promising his throne forever?", opts:["The Davidic Covenant","The Mosaic Covenant","The Noahic Covenant","The Abrahamic Covenant"], a:"The Davidic Covenant"},
+    {t:"mc", ref:"2 Samuel 24", q:"What did David do wrong that led to a deadly plague on Israel near the end of 2 Samuel?", opts:["He took an unauthorized census of the people","He built an idol","He refused to fight","He insulted the priests"], a:"He took an unauthorized census of the people"},
+    {t:"mc", ref:"2 Samuel 24:18-25", q:"Where did David buy land to build an altar and stop the plague — later the site of Solomon's Temple?", opts:["The threshing floor of Araunah","Mount Nebo","The cave of Machpelah","The field of Naboth"], a:"The threshing floor of Araunah"},
+  ], medium: [
+    {t:"mc", ref:"2 Samuel 11", q:"Whose husband Uriah did David have killed after taking her as his wife?", opts:["Bathsheba","Abigail","Michal","Tamar"], a:"Bathsheba"},
+    {t:"mc", ref:"2 Samuel 18", q:"Which of David's generals killed Absalom despite the king's command to spare him?", opts:["Joab","Abner","Amasa","Ittai"], a:"Joab"},
+    {t:"mc", ref:"2 Samuel 13", q:"Who raped David's daughter Tamar, prompting his half-brother Absalom's revenge?", opts:["Amnon","Adonijah","Chileab","Shephatiah"], a:"Amnon"},
+    {t:"mc", ref:"2 Samuel 13", q:"How did Absalom avenge his sister Tamar?", opts:["He had Amnon killed","He exiled Amnon","He reported him to David for punishment","He forgave him publicly"], a:"He had Amnon killed"},
+    {t:"mc", ref:"2 Samuel 16", q:"Who cursed David and threw stones at him as he fled Jerusalem during Absalom's revolt?", opts:["Shimei","Ziba","Ahithophel","Sheba"], a:"Shimei"},
+    {t:"mc", ref:"2 Samuel 17", q:"Which of Absalom's counselors gave him advice, then hanged himself when his counsel was rejected?", opts:["Ahithophel","Hushai","Amasa","Ittai"], a:"Ahithophel"},
+    {t:"mc", ref:"2 Samuel 15-17", q:"Who was David's loyal spy among Absalom's counselors, whose advice undermined Ahithophel's plan?", opts:["Hushai the Archite","Zadok the priest","Ittai the Gittite","Barzillai"], a:"Hushai the Archite"},
+    {t:"mc", ref:"2 Samuel 20", q:"Who led a later rebellion against David after Absalom's death, blowing a trumpet through the tribes?", opts:["Sheba","Shimei","Amasa","Adonijah"], a:"Sheba"},
+    {t:"fill", ref:"2 Samuel 7:16", q:"\"...Your throne shall be established ___.\"", opts:["forever","in Jerusalem","in glory","with justice"], a:"forever"},
+    {t:"mc", ref:"2 Samuel 7", q:"What did David originally want to build for the LORD, before being told his son would do it instead?", opts:["A temple/house for the LORD","A new altar","A city wall","A royal palace for God's priests"], a:"A temple/house for the LORD"},
+    {t:"mc", ref:"2 Samuel 3", q:"Which of David's rivals did Joab kill by trickery, in revenge for his own brother's death?", opts:["Abner","Amasa","Ish-bosheth","Sheba"], a:"Abner"},
+    {t:"fill", ref:"2 Samuel 22:2", q:"\"...The LORD is my rock and my ___ and my deliverer.\"", opts:["fortress","shepherd","strength alone","shield"], a:"fortress"},
+  ], hard: [
+    {t:"mc", ref:"2 Samuel 15", q:"Which son of David led a rebellion to seize his throne?", opts:["Absalom","Solomon","Amnon","Adonijah"], a:"Absalom"},
+    {t:"fill", ref:"2 Samuel 1:19", q:"\"Your glory, O Israel, is slain on your high places! How the mighty have ___!\"", opts:["fallen","perished","died","vanished"], a:"fallen"},
+    {t:"mc", ref:"2 Samuel 5:5", q:"How long did David reign as king over Judah before also becoming king over all Israel?", opts:["About 7 years","About 1 year","About 20 years","About 3 years"], a:"About 7 years"},
+    {t:"mc", ref:"2 Samuel", q:"What was Joab's relationship to David?", opts:["Nephew and army commander","Son-in-law","Brother","Court prophet"], a:"Nephew and army commander"},
+    {t:"mc", ref:"2 Samuel 20", q:"Whom did Joab kill near the end of David's reign, by trickery, after being replaced as commander?", opts:["Amasa","Sheba","Shimei","Ittai"], a:"Amasa"},
+    {t:"mc", ref:"2 Samuel 23", q:"What group of elite warriors is famously listed near the end of 2 Samuel?", opts:["David's mighty men (\"the Thirty\")","The sons of Zadok","The Levitical guard","The king's bodyguard of Cherethites"], a:"David's mighty men (\"the Thirty\")"},
+    {t:"mc", ref:"2 Samuel 21", q:"Who was Rizpah, whose sons were handed over and killed to end a famine in 2 Samuel 21?", opts:["Saul's concubine","David's sister","Absalom's wife","Joab's mother"], a:"Saul's concubine"},
+    {t:"mc", ref:"2 Samuel 6", q:"What error did David initially make when first trying to move the Ark to Jerusalem, leading to Uzzah's death?", opts:["Transporting it on a cart instead of carried by Levites","Leaving it uncovered","Bringing it at night","Letting a foreigner touch it"], a:"Transporting it on a cart instead of carried by Levites"},
+    {t:"mc", ref:"2 Samuel 24:13-16", q:"How many days did the plague from David's census last before God relented?", opts:["Three days","Seven days","Forty days","One day"], a:"Three days"},
+    {t:"mc", ref:"2 Samuel 16,19", q:"What did Ziba, Mephibosheth's servant, do during Absalom's rebellion that later caused tension with his master?", opts:["He falsely accused Mephibosheth of disloyalty to gain his land","He joined Absalom's army","He hid Mephibosheth's sons","He stole the Ark"], a:"He falsely accused Mephibosheth of disloyalty to gain his land"},
+    {t:"mc", ref:"2 Samuel 22", q:"2 Samuel 22, David's song of deliverance, closely parallels which psalm in the book of Psalms?", opts:["Psalm 18","Psalm 23","Psalm 51","Psalm 119"], a:"Psalm 18"},
+    {t:"mc", ref:"2 Samuel 12:15-23", q:"What did David do when he learned his infant son by Bathsheba was gravely ill, before the boy died?", opts:["He fasted, prayed, and pleaded with God","He held a public festival","He sent for foreign physicians","He ignored the news"], a:"He fasted, prayed, and pleaded with God"},
+  ]},
+"1 Kings": { easy: [
+    {t:"mc", ref:"1 Kings 3", q:"Which king asked God for wisdom to govern his people?", opts:["Solomon","David","Rehoboam","Ahab"], a:"Solomon"},
+  ], medium: [
+    {t:"mc", ref:"1 Kings 6", q:"What major building did Solomon construct in Jerusalem?", opts:["The Temple","The palace only","City walls","The tabernacle"], a:"The Temple"},
+  ], hard: [
+    {t:"mc", ref:"1 Kings 18", q:"Which prophet confronted the prophets of Baal on Mount Carmel?", opts:["Elijah","Elisha","Isaiah","Micaiah"], a:"Elijah"},
+    {t:"fill", ref:"1 Kings 19:12", q:"\"...and after the fire the sound of a low ___.\"", opts:["whisper","wind","voice","trumpet"], a:"whisper"},
+  ]},
+"2 Kings": { easy: [
+    {t:"mc", ref:"2 Kings 2", q:"Which prophet was taken up to heaven in a whirlwind by a chariot of fire?", opts:["Elijah","Elisha","Isaiah","Ezekiel"], a:"Elijah"},
+  ], medium: [
+    {t:"mc", ref:"2 Kings 2", q:"Elisha received a double portion of whose spirit before he was taken up?", opts:["Elijah's","Samuel's","Moses's","David's"], a:"Elijah's"},
+  ], hard: [
+    {t:"mc", ref:"2 Kings 22-23", q:"Which king of Judah led major reforms after the Book of the Law was found in the Temple?", opts:["Josiah","Hezekiah","Jehoshaphat","Manasseh"], a:"Josiah"},
+  ]},
+Psalms: { easy: [
+    {t:"fill", ref:"Psalm 23:1", q:"\"The LORD is my ___; I shall not want.\"", opts:["shepherd","rock","fortress","light"], a:"shepherd"},
+    {t:"mc", ref:"Psalm 19:1", q:"What declares the glory of God according to this psalm?", opts:["The heavens","The mountains","The sea","The angels"], a:"The heavens"},
+    {t:"fill", ref:"Psalm 46:1", q:"\"God is our refuge and ___, a very present help in trouble.\"", opts:["strength","shield","song","light"], a:"strength"},
+    {t:"order", ref:"Psalm 23:1", verse:"The LORD is my shepherd; I shall not want.", q:"Arrange the verse in order:"},
+    {t:"fill", ref:"Psalm 46:10", q:"\"Be still, and know that I am ___.\"", opts:["God","the LORD","holy","near"], a:"God"},
+    {t:"order", ref:"Psalm 46:10", verse:"Be still, and know that I am God.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"fill", ref:"Psalm 119:105", q:"\"Your word is a lamp to my feet and a ___ to my path.\"", opts:["light","guide","staff","song"], a:"light"},
+    {t:"fill", ref:"Psalm 51:10", q:"\"Create in me a clean heart, O God, and renew a right ___ within me.\"", opts:["spirit","mind","soul","will"], a:"spirit"},
+    {t:"mc", ref:"Psalm 137:1", q:"By what land are the exiles said to sit weeping, remembering Zion?", opts:["Babylon","Jordan","Nile","Euphrates alone"], a:"Babylon"},
+    {t:"fill", ref:"Psalm 42:1", q:"\"As a deer pants for flowing streams, so pants my soul for ___.\"", opts:["you, O God","the LORD","wisdom","home"], a:"you, O God"},
+  ], hard: [
+    {t:"fill", ref:"Psalm 22:1", q:"\"My God, my God, why have you ___ me?\"", opts:["forsaken","forgotten","abandoned","left"], a:"forsaken"},
+    {t:"mc", ref:"Psalm 90:1-2", q:"Which psalm is attributed to Moses, calling God a dwelling place through all generations?", opts:["Psalm 90","Psalm 91","Psalm 100","Psalm 110"], a:"Psalm 90"},
+    {t:"fill", ref:"Psalm 139:14", q:"\"I praise you, for I am fearfully and ___ made.\"", opts:["wonderfully","beautifully","perfectly","carefully"], a:"wonderfully"},
+  ]},
+Proverbs: { easy: [
+    {t:"fill", ref:"Proverbs 3:5", q:"\"Trust in the LORD with all your heart, and do not lean on your own ___.\"", opts:["understanding","wisdom","strength","knowledge"], a:"understanding"},
+    {t:"fill", ref:"Proverbs 15:1", q:"\"A soft answer turns away ___, but a harsh word stirs up anger.\"", opts:["wrath","conflict","fools","enemies"], a:"wrath"},
+  ], medium: [
+    {t:"fill", ref:"Proverbs 1:7", q:"\"The fear of the LORD is the beginning of ___.\"", opts:["knowledge","wisdom alone","life","understanding"], a:"knowledge"},
+  ], hard: [
+    {t:"fill", ref:"Proverbs 22:6", q:"\"Train up a child in the way he should go; even when he is old he will not depart from ___.\"", opts:["it","God","wisdom","the path"], a:"it"},
+  ]},
+Isaiah: { easy: [
+    {t:"fill", ref:"Isaiah 9:6", q:"\"...and his name shall be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of ___.\"", opts:["Peace","Glory","Life","Israel"], a:"Peace"},
+  ], medium: [
+    {t:"fill", ref:"Isaiah 53:5", q:"\"...and with his wounds we are ___.\"", opts:["healed","forgiven","saved","cleansed"], a:"healed"},
+    {t:"order", ref:"Isaiah 9:6", verse:"For to us a child is born, to us a son is given.", q:"Arrange the verse in order:"},
+  ], hard: [
+    {t:"mc", ref:"Isaiah 6", q:"In Isaiah's temple vision, what did the seraphim cry out?", opts:["\"Holy, holy, holy\"","\"Glory to God\"","\"Worthy is the Lamb\"","\"Hosanna\""], a:"\"Holy, holy, holy\""},
+  ]},
+Jeremiah: { easy: [
+    {t:"mc", ref:"Jeremiah", q:"Jeremiah is traditionally known as which kind of prophet, due to his laments?", opts:["The weeping prophet","The silent prophet","The joyful prophet","The wandering prophet"], a:"The weeping prophet"},
+  ], medium: [
+    {t:"fill", ref:"Jeremiah 29:11", q:"\"For I know the plans I have for you... plans to give you a future and a ___.\"", opts:["hope","home","reward","name"], a:"hope"},
+  ], hard: [
+    {t:"mc", ref:"Jeremiah 38", q:"Jeremiah was thrown into what by officials angered at his message?", opts:["A muddy cistern","The Nile River","A lions' den","A furnace"], a:"A muddy cistern"},
+  ]},
+Daniel: { easy: [
+    {t:"mc", ref:"Daniel 6", q:"Who was thrown into the lions' den for praying to God?", opts:["Daniel","Shadrach","Nebuchadnezzar","Belshazzar"], a:"Daniel"},
+  ], medium: [
+    {t:"mc", ref:"Daniel 3", q:"Who were thrown into the fiery furnace and survived unharmed?", opts:["Shadrach, Meshach, and Abednego","Daniel and his friends","The three wise men","Ezra and Nehemiah"], a:"Shadrach, Meshach, and Abednego"},
+  ], hard: [
+    {t:"mc", ref:"Daniel 2", q:"Who interpreted King Nebuchadnezzar's dream of the great statue?", opts:["Daniel","Joseph","Isaiah","The court magicians"], a:"Daniel"},
+  ]},
+Jonah: { easy: [
+    {t:"mc", ref:"Jonah 1-2", q:"What swallowed Jonah after he was thrown overboard?", opts:["A great fish","A whale specifically named","A shark","A sea monster called Leviathan by name"], a:"A great fish"},
+  ], medium: [
+    {t:"mc", ref:"Jonah 1,3", q:"To what city was Jonah sent to preach repentance?", opts:["Nineveh","Babylon","Tarshish","Damascus"], a:"Nineveh"},
+    {t:"fill", ref:"Jonah 2:9", q:"\"...Salvation belongs to the ___.\"", opts:["LORD","righteous","faithful","obedient"], a:"LORD"},
+  ], hard: [
+    {t:"mc", ref:"Jonah 1,4", q:"Why did Jonah initially flee toward Tarshish instead of obeying God?", opts:["He didn't want Nineveh to be spared","He was afraid of dying","He didn't believe God existed","He wanted a different mission"], a:"He didn't want Nineveh to be spared"},
+  ]},
+Matthew: { easy: [
+    {t:"mc", ref:"Matthew 1-2", q:"In what town was Jesus born, according to Matthew?", opts:["Bethlehem","Nazareth","Jerusalem","Capernaum"], a:"Bethlehem"},
+    {t:"mc", ref:"Matthew 2", q:"Who visited the infant Jesus, following a star?", opts:["Wise men (Magi)","Shepherds","Roman soldiers","Priests"], a:"Wise men (Magi)"},
+    {t:"mc", ref:"Matthew 4:1-11", q:"Who tempted Jesus in the wilderness?", opts:["The devil","A Pharisee","A demon","Herod"], a:"The devil"},
+    {t:"fill", ref:"Matthew 6:24", q:"\"No servant can serve two masters... You cannot serve God and ___.\"", opts:["money","the world","yourself","idols"], a:"money"},
+  ], medium: [
+    {t:"fill", ref:"Matthew 5:9", q:"\"Blessed are the peacemakers, for they shall be called sons of ___.\"", opts:["God","light","heaven","Abraham"], a:"God"},
+    {t:"mc", ref:"Matthew 14:13-21", q:"How many loaves fed the 5,000 in this account?", opts:["5","7","2","12"], a:"5"},
+    {t:"mc", ref:"Matthew 26-27", q:"Who betrayed Jesus for thirty pieces of silver?", opts:["Judas Iscariot","Peter","Thomas","Pilate"], a:"Judas Iscariot"},
+    {t:"fill", ref:"Matthew 6:20", q:"\"...but lay up for yourselves treasures in ___, where neither moth nor rust destroys.\"", opts:["heaven","glory","God","eternity"], a:"heaven"},
+  ], hard: [
+    {t:"fill", ref:"Matthew 28:19", q:"\"...baptizing them in the name of the Father and of the Son and of the Holy ___.\"", opts:["Spirit","Ghost","Church","Kingdom"], a:"Spirit"},
+    {t:"mc", ref:"Matthew 16:18", q:"On what did Jesus say he would build his church?", opts:["This rock","The temple","Faith alone","The apostles"], a:"This rock"},
+    {t:"mc", ref:"Matthew 6:9-13", q:"What is the traditional name for the prayer Jesus teaches in Matthew 6?", opts:["The Lord's Prayer","The Beatitudes","The Great Commission","The Sermon"], a:"The Lord's Prayer"},
+    {t:"fill", ref:"Matthew 22:14", q:"\"For many are called, but few are ___.\"", opts:["chosen","faithful","worthy","saved"], a:"chosen"},
+  ]},
+Mark: { easy: [
+    {t:"mc", ref:"Mark", q:"Which Gospel is traditionally regarded as the shortest?", opts:["Mark","Matthew","Luke","John"], a:"Mark"},
+  ], medium: [
+    {t:"mc", ref:"Mark 1:2-3", q:"Mark's Gospel opens with a quotation from which Old Testament prophet?", opts:["Isaiah","Jeremiah","Malachi","Ezekiel"], a:"Isaiah"},
+    {t:"fill", ref:"Mark 10:45", q:"\"...and to give his life as a ___ for many.\"", opts:["ransom","gift","sacrifice","offering"], a:"ransom"},
+  ], hard: [
+    {t:"mc", ref:"Mark 15", q:"Who was compelled to carry Jesus' cross to Golgotha?", opts:["Simon of Cyrene","Joseph of Arimathea","Nicodemus","Barabbas"], a:"Simon of Cyrene"},
+  ]},
+Luke: { easy: [
+    {t:"mc", ref:"Luke 10", q:"Which Gospel records the parable of the Good Samaritan?", opts:["Luke","Matthew","Mark","John"], a:"Luke"},
+    {t:"fill", ref:"Luke 11:9", q:"\"Ask, and it will be given to you; seek, and you will ___.\"", opts:["find","receive","know","see"], a:"find"},
+  ], medium: [
+    {t:"mc", ref:"Luke 1", q:"Which angel announced to Mary that she would bear Jesus?", opts:["Gabriel","Michael","Raphael","An unnamed angel"], a:"Gabriel"},
+  ], hard: [
+    {t:"mc", ref:"Luke / Acts", q:"The author of Luke also wrote which other New Testament book?", opts:["Acts","Romans","Hebrews","Revelation"], a:"Acts"},
+  ]},
+John: { easy: [
+    {t:"fill", ref:"John 3:16", q:"\"For God so loved the world, that he gave his only ___ Son.\"", opts:["begotten","beloved","precious","holy"], a:"begotten"},
+    {t:"mc", ref:"John 2:1-11", q:"What was Jesus' first miracle in John's Gospel?", opts:["Turning water into wine","Feeding the 5,000","Walking on water","Healing a blind man"], a:"Turning water into wine"},
+    {t:"mc", ref:"John 11", q:"Whom did Jesus raise from the dead in Bethany?", opts:["Lazarus","Jairus' daughter","The widow's son","Stephen"], a:"Lazarus"},
+    {t:"order", ref:"John 11:35", verse:"Jesus wept.", q:"Arrange the verse in order (shortest verse in the Bible!):"},
+    {t:"order", ref:"John 6:35", verse:"I am the bread of life.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"fill", ref:"John 1:1", q:"\"In the beginning was the Word, and the Word was with God, and the Word was ___.\"", opts:["God","light","truth","life"], a:"God"},
+    {t:"mc", ref:"John 13", q:"What act of humble service did Jesus perform for his disciples at the Last Supper?", opts:["Washed their feet","Anointed their heads","Blessed their bread","Prayed over each"], a:"Washed their feet"},
+    {t:"mc", ref:"John 20", q:"Who was first to see the risen Jesus at the tomb, per John?", opts:["Mary Magdalene","Peter","John","Thomas"], a:"Mary Magdalene"},
+    {t:"fill", ref:"John 8:32", q:"\"...and you will know the truth, and the truth will set you ___.\"", opts:["free","right","home","apart"], a:"free"},
+    {t:"fill", ref:"John 3:3", q:"\"...unless one is born again he cannot see the kingdom of ___.\"", opts:["God","heaven","light","the Father"], a:"God"},
+  ], hard: [
+    {t:"fill", ref:"John 14:6", q:"\"I am the way, and the truth, and the ___. No one comes to the Father except through me.\"", opts:["life","light","door","vine"], a:"life"},
+    {t:"mc", ref:"John 21", q:"How many fish did the disciples catch in the net after Jesus' resurrection appearance by the sea?", opts:["153","144","120","100"], a:"153"},
+    {t:"mc", ref:"John 8:58", q:"What claim did Jesus make that led hearers to try to stone him?", opts:["\"Before Abraham was, I am\"","\"I and the Father are the same person\"","\"I am the Messiah alone\"","\"I forgive all sins\""], a:"\"Before Abraham was, I am\""},
+    {t:"fill", ref:"John 10:11", q:"\"I am the good ___. The good shepherd lays down his life for the sheep.\"", opts:["shepherd","teacher","master","king"], a:"shepherd"},
+  ]},
+Acts: { easy: [
+    {t:"mc", ref:"Acts 2", q:"On what day did the Holy Spirit come upon the believers with tongues of fire?", opts:["Pentecost","Passover","The Sabbath","Purim"], a:"Pentecost"},
+  ], medium: [
+    {t:"mc", ref:"Acts 9", q:"Who was struck blind by a vision of Jesus on the road to Damascus?", opts:["Saul (Paul)","Peter","Stephen","Barnabas"], a:"Saul (Paul)"},
+    {t:"fill", ref:"Acts 1:8", q:"\"...you will be my witnesses in Jerusalem and in all Judea and Samaria, and to the end of the ___.\"", opts:["earth","world","age","nations"], a:"earth"},
+  ], hard: [
+    {t:"mc", ref:"Acts 7", q:"Who was the first Christian martyr recorded in Acts?", opts:["Stephen","James","Peter","Philip"], a:"Stephen"},
+  ]},
+Romans: { easy: [
+    {t:"mc", ref:"Romans", q:"Who wrote the letter to the Romans?", opts:["Paul","Peter","John","James"], a:"Paul"},
+    {t:"fill", ref:"Romans 3:23", q:"\"For all have sinned and fall short of the ___ of God.\"", opts:["glory","law","grace","presence"], a:"glory"},
+    {t:"fill", ref:"Romans 6:23", q:"\"For the wages of sin is death, but the free gift of God is eternal ___.\"", opts:["life","joy","peace","hope"], a:"life"},
+  ], medium: [
+    {t:"fill", ref:"Romans 8:28", q:"\"And we know that for those who love God all things work together for ___.\"", opts:["good","peace","joy","glory"], a:"good"},
+    {t:"mc", ref:"Romans 1:16", q:"What does Paul say he is not ashamed of?", opts:["The gospel","The law","Suffering","His chains"], a:"The gospel"},
+    {t:"fill", ref:"Romans 10:9", q:"\"...if you confess with your mouth that Jesus is Lord and believe in your heart that God raised him from the ___...\"", opts:["dead","grave","tomb","earth"], a:"dead"},
+    {t:"fill", ref:"Romans 5:6", q:"\"For while we were still weak, at the right time Christ died for the ___.\"", opts:["ungodly","lost","world","sinner"], a:"ungodly"},
+  ], hard: [
+    {t:"fill", ref:"Romans 12:2", q:"\"Do not be conformed to this world, but be transformed by the renewal of your ___.\"", opts:["mind","heart","spirit","soul"], a:"mind"},
+    {t:"mc", ref:"Romans 5:8", q:"How does Paul say God showed his love for us?", opts:["While we were still sinners, Christ died for us","By giving the law","By choosing Israel","Through the prophets"], a:"While we were still sinners, Christ died for us"},
+    {t:"order", ref:"Romans 6:23", verse:"For the wages of sin is death, but the free gift of God is eternal life.", q:"Arrange the verse in order:"},
+  ]},
+"1 Corinthians": { easy: [
+    {t:"fill", ref:"1 Corinthians 13:13", q:"\"So now faith, hope, and love abide, these three; but the greatest of these is ___.\"", opts:["love","faith","hope","grace"], a:"love"},
+    {t:"fill", ref:"1 Corinthians 13:4", q:"\"___ is patient and kind; love does not envy or boast.\"", opts:["Love","Faith","Hope","Grace"], a:"Love"},
+  ], medium: [
+    {t:"mc", ref:"1 Corinthians 15", q:"1 Corinthians 15 is a major chapter defending which doctrine?", opts:["The resurrection","The law","Baptism","Spiritual gifts alone"], a:"The resurrection"},
+    {t:"fill", ref:"1 Corinthians 9:22", q:"\"I have become all things to all people, that by all means I might save ___.\"", opts:["some","all","many","them"], a:"some"},
+  ], hard: [
+    {t:"order", ref:"1 Corinthians 13:4", verse:"Love is patient and kind; love does not envy or boast.", q:"Arrange the verse in order:"},
+  ]},
+Galatians: { easy: [
+    {t:"fill", ref:"Galatians 5:22-23", q:"\"But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faithfulness, gentleness, ___.\"", opts:["self-control","humility","holiness","obedience"], a:"self-control"},
+  ], medium: [
+    {t:"mc", ref:"Galatians", q:"Who wrote the letter to the Galatians?", opts:["Paul","Peter","Barnabas","James"], a:"Paul"},
+  ], hard: [
+    {t:"mc", ref:"Galatians 2", q:"Paul confronted which apostle in Antioch over hypocrisy about eating with Gentiles?", opts:["Peter (Cephas)","John","James","Barnabas"], a:"Peter (Cephas)"},
+    {t:"fill", ref:"Galatians 2:20", q:"\"I have been crucified with Christ. It is no longer I who live, but Christ who lives in ___.\"", opts:["me","us","believers","my heart"], a:"me"},
+  ]},
+Ephesians: { easy: [
+    {t:"fill", ref:"Ephesians 2:8", q:"\"For by grace you have been saved through faith. And this is not your own doing; it is the gift of ___.\"", opts:["God","the Spirit","Christ","the Father"], a:"God"},
+    {t:"order", ref:"Ephesians 2:8", verse:"For by grace you have been saved through faith.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"mc", ref:"Ephesians 6", q:"Ephesians 6 describes believers putting on what for spiritual battle?", opts:["The armor of God","The robe of righteousness alone","The shield of David","The sword of Goliath"], a:"The armor of God"},
+    {t:"fill", ref:"Ephesians 6:10", q:"\"Finally, be strong in the ___ and in the strength of his might.\"", opts:["Lord","Spirit","faith","truth"], a:"Lord"},
+  ], hard: [
+    {t:"mc", ref:"Ephesians", q:"Ephesians is traditionally understood to have been written by Paul while in what circumstance?", opts:["Imprisoned","On a missionary journey","In hiding","On trial before Caesar only"], a:"Imprisoned"},
+  ]},
+Philippians: { easy: [
+    {t:"fill", ref:"Philippians 4:13", q:"\"I can do all things through him who ___ me.\"", opts:["strengthens","saves","loves","calls"], a:"strengthens"},
+    {t:"order", ref:"Philippians 4:13", verse:"I can do all things through him who strengthens me.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"fill", ref:"Philippians 4:6", q:"\"Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to ___.\"", opts:["God","the Lord alone","Christ","the church"], a:"God"},
+    {t:"fill", ref:"Philippians 4:4", q:"\"Rejoice in the ___ always; again I will say, Rejoice.\"", opts:["Lord","LORD God","Spirit","truth"], a:"Lord"},
+  ], hard: [
+    {t:"mc", ref:"Philippians", q:"From where did Paul most likely write the letter to the Philippians?", opts:["Prison (Rome)","Corinth","Ephesus","Athens"], a:"Prison (Rome)"},
+  ]},
+James: { easy: [
+    {t:"fill", ref:"James 1:19", q:"\"...let every person be quick to hear, slow to speak, slow to ___.\"", opts:["anger","judge","act","doubt"], a:"anger"},
+    {t:"order", ref:"James 1:19", verse:"Let every person be quick to hear, slow to speak, slow to anger.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"fill", ref:"James 2:17", q:"\"So also faith by itself, if it does not have works, is ___.\"", opts:["dead","useless","weak","incomplete"], a:"dead"},
+  ], hard: [
+    {t:"mc", ref:"James", q:"The author James is traditionally identified as whom?", opts:["The brother of Jesus","The apostle John's brother","Peter's cousin","A Roman convert"], a:"The brother of Jesus"},
+    {t:"order", ref:"James 1:19", verse:"Let every person be quick to hear, slow to speak, slow to anger.", q:"Arrange the verse in order:"},
+  ]},
+Revelation: { easy: [
+    {t:"mc", ref:"Revelation", q:"Revelation is traditionally attributed to which apostle?", opts:["John","Peter","Paul","James"], a:"John"},
+    {t:"fill", ref:"Revelation 1:8", q:"\"I am the ___ and the Omega,\" says the Lord God, \"who is and who was and who is to come, the Almighty.\"", opts:["Alpha","beginning","first","light"], a:"Alpha"},
+  ], medium: [
+    {t:"mc", ref:"Revelation 1-3", q:"Revelation opens with letters addressed to how many churches?", opts:["Seven","Twelve","Three","Ten"], a:"Seven"},
+    {t:"fill", ref:"Revelation 3:20", q:"\"Behold, I stand at the door and ___. If anyone hears my voice and opens the door, I will come in to him.\"", opts:["knock","call","wait","speak"], a:"knock"},
+  ], hard: [
+    {t:"fill", ref:"Revelation 21:4", q:"\"...neither shall there be mourning, nor crying, nor pain anymore, for the former things have passed ___.\"", opts:["away","by","on","through"], a:"away"},
+  ]},
+Leviticus: { easy: [
+    {t:"mc", ref:"Leviticus", q:"Leviticus is primarily concerned with what?", opts:["Laws for priests and worship","Israel's history","Poetry and wisdom","Prophecy"], a:"Laws for priests and worship"},
+    {t:"fill", ref:"Leviticus 11:44", q:"\"...Consecrate yourselves therefore, and be holy, for I am ___.\"", opts:["holy","the LORD","just","near"], a:"holy"},
+    {t:"mc", ref:"Leviticus 23:5", q:"What Israelite feast does Leviticus 23:5 place on the fourteenth day of the first month?", opts:["Passover","Pentecost","Tabernacles","Purim"], a:"Passover"},
+    {t:"mc", ref:"Leviticus", q:"Leviticus repeatedly commands Israel to keep which weekly holy day of rest?", opts:["The Sabbath","The Jubilee","The New Moon","Firstfruits"], a:"The Sabbath"},
+  ], medium: [
+    {t:"mc", ref:"Leviticus 16", q:"Leviticus 16 describes an annual ceremony where a goat symbolically carries away the people's sins. What is it called?", opts:["The Day of Atonement","Passover","The Feast of Weeks","The Feast of Tabernacles"], a:"The Day of Atonement"},
+    {t:"mc", ref:"Leviticus 25:10", q:"Leviticus 25 describes a special year, every fiftieth year, when debts were forgiven and land returned to its original owners. What is it called?", opts:["Jubilee","Sabbath Year","Feast of Weeks","Day of Atonement"], a:"Jubilee"},
+    {t:"fill", ref:"Leviticus 25:10", q:"\"...and proclaim ___ throughout the land to all its inhabitants.\"", opts:["liberty","peace","rest","freedom for all"], a:"liberty"},
+    {t:"mc", ref:"Leviticus", q:"Which family within Israel was set apart as priests throughout Leviticus?", opts:["Aaron's descendants (the Levites)","The firstborn of every tribe","The tribe of Judah","The tribe of Ephraim"], a:"Aaron's descendants (the Levites)"},
+    {t:"mc", ref:"Leviticus 19:18,Matthew 22:39", q:"Leviticus 19's command to \"love your neighbor as yourself\" is later quoted by Jesus as which commandment?", opts:["The second great commandment","The first commandment","The Golden Rule alone","A minor ceremonial law"], a:"The second great commandment"},
+  ], hard: [
+    {t:"fill", ref:"Leviticus 19:18", q:"\"...but you shall love your neighbor as ___.\"", opts:["yourself","others","God","your family"], a:"yourself"},
+    {t:"mc", ref:"Leviticus 10:1-2", q:"What happened to Aaron's sons Nadab and Abihu for offering unauthorized fire before the LORD?", opts:["They were struck dead by fire from the LORD","They were exiled","They were demoted from the priesthood","Nothing—God forgave them"], a:"They were struck dead by fire from the LORD"},
+    {t:"mc", ref:"Leviticus 16", q:"On the Day of Atonement, one goat was sacrificed while the other — the scapegoat — was sent where?", opts:["Into the wilderness","Into the Holy of Holies","To the altar of incense","Back to the flock"], a:"Into the wilderness"},
+    {t:"mc", ref:"Leviticus 19:19", q:"Leviticus 19 forbids mixing what kinds of things, such as two kinds of seed in a field?", opts:["Different kinds of seed, animals, or thread","Different colors of clothing only","Different metals only","Nothing—it forbids nothing like that"], a:"Different kinds of seed, animals, or thread"},
+  ]},
+Numbers: { easy: [
+    {t:"mc", ref:"Numbers", q:"How many years did Israel wander in the wilderness, according to Numbers?", opts:["40","70","12","400"], a:"40"},
+    {t:"mc", ref:"Numbers", q:"The book of Numbers gets its name from two events involving what, of Israel's tribes?", opts:["Censuses (counts of the people)","Battles","Laws","Genealogies of kings"], a:"Censuses (counts of the people)"},
+    {t:"order", ref:"Numbers 6:24", verse:"The LORD bless you and keep you;", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"mc", ref:"Numbers 22", q:"In Numbers 22, what kind of animal miraculously speaks to rebuke the prophet Balaam?", opts:["A donkey","A goat","A camel","A sheep"], a:"A donkey"},
+    {t:"mc", ref:"Numbers 13-14", q:"Of the twelve spies sent into Canaan, only two gave a faithful report. Name them.", opts:["Joshua and Caleb","Aaron and Hur","Nadab and Abihu","Eldad and Medad"], a:"Joshua and Caleb"},
+    {t:"mc", ref:"Numbers 14", q:"Why did the generation of Israelites who left Egypt fail to enter the Promised Land?", opts:["Unbelief and rebellion after the spies' report","A plague killed them all","They chose to stay in Egypt","Moses forbade it"], a:"Unbelief and rebellion after the spies' report"},
+    {t:"fill", ref:"Numbers 6:25", q:"\"...the LORD make his face to ___ upon you and be gracious to you.\"", opts:["shine","turn","look","smile"], a:"shine"},
+    {t:"mc", ref:"Numbers 21:9", q:"What did God have Moses make, which healed those who looked at it after being bitten by snakes?", opts:["A bronze serpent","A silver staff","A golden lamb","A stone altar"], a:"A bronze serpent"},
+    {t:"mc", ref:"Numbers 22-24", q:"King Balak of Moab hired the prophet Balaam to do what to Israel?", opts:["Curse them","Bless them","Spy on them","Ambush them at night"], a:"Curse them"},
+  ], hard: [
+    {t:"mc", ref:"Numbers 13-14", q:"How many spies did Moses send into Canaan?", opts:["12","10","7","2"], a:"12"},
+    {t:"mc", ref:"Numbers 17", q:"What miraculous sign confirmed Aaron's priestly authority among the staffs of all twelve tribal leaders?", opts:["Aaron's staff budded and bore almonds","Aaron's staff turned to gold","Fire consumed Aaron's staff","Aaron's staff turned into a serpent"], a:"Aaron's staff budded and bore almonds"},
+    {t:"fill", ref:"Numbers 14:18", q:"\"...The LORD is slow to ___, and abounding in steadfast love, forgiving iniquity and transgression...\"", opts:["anger","judge","speak","act"], a:"anger"},
+    {t:"mc", ref:"Numbers 6:22-27", q:"Numbers 6 gives a famous priestly blessing spoken over Israel. What is it commonly called?", opts:["The Aaronic Blessing","The Great Commission","The Shema","The Beatitudes"], a:"The Aaronic Blessing"},
+    {t:"order", ref:"Numbers 6:26", verse:"the LORD lift up his countenance upon you and give you peace.", q:"Arrange the verse in order:"},
+    {t:"mc", ref:"Numbers 18", q:"Which tribe received no allotted territory in Canaan because they were set apart for priestly service?", opts:["Levi","Simeon","Dan","Naphtali"], a:"Levi"},
+  ]},
+"1 Chronicles": { easy: [
+    {t:"mc", ref:"1 Chronicles", q:"1 Chronicles opens largely with what kind of lists?", opts:["Genealogies","Laws","Psalms","Prophecies"], a:"Genealogies"},
+  ], medium: [
+    {t:"mc", ref:"1 Chronicles", q:"Which king's reign is the central focus of 1 Chronicles?", opts:["David","Solomon","Saul","Rehoboam"], a:"David"},
+  ], hard: [
+    {t:"mc", ref:"1 Chronicles 21", q:"1 Chronicles 21 records David sinning by doing what?", opts:["Taking a census of Israel","Marrying a foreign wife","Building an altar to idols","Refusing to fight"], a:"Taking a census of Israel"},
+  ]},
+"2 Chronicles": { easy: [
+    {t:"mc", ref:"2 Chronicles", q:"2 Chronicles largely parallels the history told in which other book(s)?", opts:["1 and 2 Kings","1 and 2 Samuel","Ezra and Nehemiah","Judges"], a:"1 and 2 Kings"},
+  ], medium: [
+    {t:"mc", ref:"2 Chronicles 2-7", q:"Which king is credited with building the Temple in 2 Chronicles?", opts:["Solomon","David","Hezekiah","Josiah"], a:"Solomon"},
+  ], hard: [
+    {t:"mc", ref:"2 Chronicles 36", q:"2 Chronicles ends with a decree from the king of which empire allowing exiles to return?", opts:["Persia","Babylon","Assyria","Egypt"], a:"Persia"},
+  ]},
+Ezra: { easy: [
+    {t:"mc", ref:"Ezra", q:"What event does the book of Ezra primarily describe?", opts:["The return from Babylonian exile and rebuilding the Temple","The exodus from Egypt","The conquest of Canaan","The reign of Solomon"], a:"The return from Babylonian exile and rebuilding the Temple"},
+  ], medium: [
+    {t:"mc", ref:"Ezra 7", q:"Ezra himself is described primarily by what role?", opts:["A priest and scribe","A king","A general","A shepherd"], a:"A priest and scribe"},
+  ], hard: [
+    {t:"mc", ref:"Ezra 1", q:"Under which Persian king's decree did the first group of exiles return, as recorded in Ezra?", opts:["Cyrus","Darius","Xerxes","Artaxerxes"], a:"Cyrus"},
+  ]},
+Nehemiah: { easy: [
+    {t:"mc", ref:"Nehemiah", q:"Nehemiah is best known for leading the rebuilding of what in Jerusalem?", opts:["The city walls","The Temple","The palace","The city gates only"], a:"The city walls"},
+  ], medium: [
+    {t:"mc", ref:"Nehemiah 1-2", q:"What was Nehemiah's role in the Persian royal court before returning to Jerusalem?", opts:["Cupbearer to the king","Chief scribe","Court prophet","Military general"], a:"Cupbearer to the king"},
+  ], hard: [
+    {t:"mc", ref:"Nehemiah 4,6", q:"Nehemiah faced opposition from two named adversaries while rebuilding the walls — Sanballat and whom?", opts:["Tobiah","Haman","Balaam","Goliath"], a:"Tobiah"},
+  ]},
+Esther: { easy: [
+    {t:"mc", ref:"Esther", q:"Esther became queen of which empire?", opts:["Persia","Babylon","Egypt","Assyria"], a:"Persia"},
+  ], medium: [
+    {t:"mc", ref:"Esther", q:"Who was the villain who plotted to destroy the Jews in the book of Esther?", opts:["Haman","Mordecai","Xerxes","Memucan"], a:"Haman"},
+  ], hard: [
+    {t:"mc", ref:"Esther 9", q:"What Jewish holiday commemorates the deliverance described in Esther?", opts:["Purim","Passover","Hanukkah","Yom Kippur"], a:"Purim"},
+  ]},
+Job: { easy: [
+    {t:"mc", ref:"Job", q:"Job is best known in the Bible as a man who endured great what?", opts:["Suffering","Wealth","Military victory","Political power"], a:"Suffering"},
+  ], medium: [
+    {t:"mc", ref:"Job", q:"Who ultimately speaks to Job out of a whirlwind near the end of the book?", opts:["The LORD","An angel","Satan","Elihu alone"], a:"The LORD"},
+  ], hard: [
+    {t:"mc", ref:"Job 42", q:"At the end of the book, how does God treat Job's fortunes compared to before?", opts:["He restores them twofold","He restores them exactly the same","He gives Job nothing more","He gives Job's wealth to his friends"], a:"He restores them twofold"},
+  ]},
+Ecclesiastes: { easy: [
+    {t:"mc", ref:"Ecclesiastes", q:"Ecclesiastes' famous refrain calls much of life what (ESV wording)?", opts:["Vanity","Foolishness","A blessing","A mystery"], a:"Vanity"},
+  ], medium: [
+    {t:"mc", ref:"Ecclesiastes", q:"The book is traditionally attributed to which wise king, writing as \"the Preacher\"?", opts:["Solomon","David","Hezekiah","Josiah"], a:"Solomon"},
+  ], hard: [
+    {t:"fill", ref:"Ecclesiastes 3:2", q:"\"...a time to be born, and a time to ___.\"", opts:["die","weep","dance","plant"], a:"die"},
+  ]},
+"Song of Solomon": { easy: [
+    {t:"mc", ref:"Song of Solomon", q:"Song of Solomon is a poetic book celebrating what?", opts:["Romantic and married love","Wisdom for kings","Israel's history","The coming Messiah"], a:"Romantic and married love"},
+  ], medium: [
+    {t:"mc", ref:"Song of Solomon", q:"The book is traditionally attributed to which king?", opts:["Solomon","David","Hezekiah","Rehoboam"], a:"Solomon"},
+  ], hard: [
+    {t:"mc", ref:"Song of Solomon", q:"The book's opening title calls it the \"Song of ___\"?", opts:["Songs","Love","David","Israel"], a:"Songs"},
+  ]},
+Lamentations: { easy: [
+    {t:"mc", ref:"Lamentations", q:"Lamentations mourns the destruction of which city?", opts:["Jerusalem","Babylon","Nineveh","Samaria"], a:"Jerusalem"},
+  ], medium: [
+    {t:"mc", ref:"Lamentations", q:"The book is traditionally attributed to which \"weeping prophet\"?", opts:["Jeremiah","Isaiah","Ezekiel","Amos"], a:"Jeremiah"},
+  ], hard: [
+    {t:"fill", ref:"Lamentations 3:22-23", q:"\"...his mercies... are new every ___.\"", opts:["morning","hour","day","moment"], a:"morning"},
+  ]},
+Ezekiel: { easy: [
+    {t:"mc", ref:"Ezekiel 37", q:"Ezekiel is known for a vision of a valley full of dry what, that came to life?", opts:["Bones","Trees","Stones","Rivers"], a:"Bones"},
+  ], medium: [
+    {t:"mc", ref:"Ezekiel", q:"Ezekiel served as a prophet to the exiles living in which empire?", opts:["Babylon","Egypt","Persia","Assyria"], a:"Babylon"},
+  ], hard: [
+    {t:"mc", ref:"Ezekiel 1", q:"Ezekiel's opening vision includes strange living creatures and what kind of wheeled structure?", opts:["Wheels within wheels","A chariot of fire","A bronze serpent","A flying scroll"], a:"Wheels within wheels"},
+  ]},
+Hosea: { easy: [
+    {t:"mc", ref:"Hosea", q:"God commanded Hosea to marry a woman known for what, symbolizing Israel's unfaithfulness?", opts:["Being unfaithful/promiscuous","Being wealthy","Being a foreigner","Being a widow"], a:"Being unfaithful/promiscuous"},
+  ], medium: [
+    {t:"mc", ref:"Hosea", q:"Hosea's difficult marriage was meant to illustrate God's relationship with whom?", opts:["Israel","The priests","The Gentiles","Egypt"], a:"Israel"},
+  ], hard: [
+    {t:"mc", ref:"Hosea 11", q:"Hosea 11 depicts God's love using what kind of image?", opts:["A father's love for his son","A king's love for his people","A shepherd's love for sheep","A warrior's love for victory"], a:"A father's love for his son"},
+  ]},
+Joel: { easy: [
+    {t:"mc", ref:"Joel", q:"Joel's prophecy describes a devastating plague of what?", opts:["Locusts","Frogs","Hail","Fire"], a:"Locusts"},
+  ], medium: [
+    {t:"mc", ref:"Joel 2 / Acts 2", q:"Joel's prophecy about God's Spirit being poured out on all people is famously quoted in which NT event?", opts:["Peter's Pentecost sermon in Acts","The Sermon on the Mount","Paul's speech in Athens","The Transfiguration"], a:"Peter's Pentecost sermon in Acts"},
+  ], hard: [
+    {t:"mc", ref:"Joel", q:"Joel repeatedly warns of the coming of what dramatic day?", opts:["The Day of the LORD","The Day of Atonement","The Day of Judgment on Egypt","The Sabbath"], a:"The Day of the LORD"},
+  ]},
+Amos: { easy: [
+    {t:"mc", ref:"Amos", q:"Amos worked as what before becoming a prophet?", opts:["A shepherd","A priest","A soldier","A scribe"], a:"A shepherd"},
+  ], medium: [
+    {t:"mc", ref:"Amos", q:"Amos frequently condemns Israel's leaders for injustice toward whom?", opts:["The poor","Foreign kings","The priests","Other prophets"], a:"The poor"},
+  ], hard: [
+    {t:"mc", ref:"Amos 7", q:"When confronted, Amos insists he is not a professional prophet but rather what?", opts:["A herdsman and dresser of sycamore figs","A royal advisor","A Levite","A soldier"], a:"A herdsman and dresser of sycamore figs"},
+  ]},
+Obadiah: { easy: [
+    {t:"mc", ref:"Obadiah", q:"Obadiah, the shortest Old Testament book, pronounces judgment on which nation?", opts:["Edom","Moab","Assyria","Babylon"], a:"Edom"},
+  ], medium: [
+    {t:"mc", ref:"Obadiah", q:"Edom is condemned in Obadiah largely for its treatment of which nation in its time of distress?", opts:["Judah/Israel","Egypt","Assyria","Philistia"], a:"Judah/Israel"},
+  ], hard: [
+    {t:"mc", ref:"Obadiah", q:"Edom's people traced their ancestry back to which biblical figure?", opts:["Esau","Lot","Ishmael","Nahor"], a:"Esau"},
+  ]},
+Micah: { easy: [
+    {t:"mc", ref:"Micah 5:2", q:"Micah is famous for prophesying the Messiah's birthplace as which town?", opts:["Bethlehem","Nazareth","Jerusalem","Hebron"], a:"Bethlehem"},
+  ], medium: [
+    {t:"fill", ref:"Micah 6:8", q:"\"...to do justice, and to love kindness, and to walk ___ with your God.\"", opts:["humbly","faithfully","closely","boldly"], a:"humbly"},
+  ], hard: [
+    {t:"mc", ref:"Micah", q:"Like Amos, Micah frequently condemns Israel's leaders for what?", opts:["Social injustice and corruption","Idol worship alone","Foreign alliances","Neglecting the Sabbath"], a:"Social injustice and corruption"},
+  ]},
+Nahum: { easy: [
+    {t:"mc", ref:"Nahum", q:"Nahum pronounces judgment on which great and cruel city?", opts:["Nineveh","Babylon","Tyre","Damascus"], a:"Nineveh"},
+  ], medium: [
+    {t:"mc", ref:"Nahum / Jonah", q:"Nahum's message of judgment on Nineveh comes roughly a century after which other prophet preached repentance there?", opts:["Jonah","Amos","Hosea","Joel"], a:"Jonah"},
+  ], hard: [
+    {t:"mc", ref:"Nahum", q:"Nahum's book is largely structured as what kind of literary piece against Nineveh?", opts:["A judgment oracle/poem of doom","A legal contract","A genealogy","A love poem"], a:"A judgment oracle/poem of doom"},
+  ]},
+Habakkuk: { easy: [
+    {t:"mc", ref:"Habakkuk", q:"Habakkuk is unique among the prophets for doing what with God?", opts:["Questioning and dialoguing with Him","Refusing to speak to Him","Worshiping idols alongside Him","Fighting a physical battle"], a:"Questioning and dialoguing with Him"},
+  ], medium: [
+    {t:"mc", ref:"Habakkuk 2:4", q:"Habakkuk's statement \"the righteous shall live by his faith\" is later quoted prominently by which New Testament author?", opts:["Paul","Peter","John","James"], a:"Paul"},
+  ], hard: [
+    {t:"mc", ref:"Habakkuk 3", q:"Habakkuk's book closes with what kind of joyful declaration despite hardship?", opts:["A hymn of trust in God even amid loss","A curse on his enemies","A genealogy","A legal complaint"], a:"A hymn of trust in God even amid loss"},
+  ]},
+Zephaniah: { easy: [
+    {t:"mc", ref:"Zephaniah", q:"Zephaniah prophesied primarily about the coming of what?", opts:["The Day of the LORD","The Messiah's birth","The rebuilding of the Temple","The return from exile"], a:"The Day of the LORD"},
+  ], medium: [
+    {t:"mc", ref:"Zephaniah", q:"Zephaniah traces his ancestry back several generations to which king?", opts:["Hezekiah","David","Solomon","Josiah"], a:"Hezekiah"},
+  ], hard: [
+    {t:"mc", ref:"Zephaniah 3", q:"Despite its warnings, Zephaniah ends with what tone?", opts:["Joyful hope and restoration","Continued doom","Silence","A call to war"], a:"Joyful hope and restoration"},
+  ]},
+Haggai: { easy: [
+    {t:"mc", ref:"Haggai", q:"Haggai urged the returned exiles to prioritize rebuilding what?", opts:["The Temple","The city walls","Their homes","The palace"], a:"The Temple"},
+  ], medium: [
+    {t:"mc", ref:"Haggai", q:"Haggai prophesied during the reign of which Persian king?", opts:["Darius","Cyrus","Xerxes","Artaxerxes"], a:"Darius"},
+  ], hard: [
+    {t:"mc", ref:"Haggai", q:"Haggai encouraged which governor, alongside the high priest Joshua, to complete the Temple?", opts:["Zerubbabel","Nehemiah","Ezra","Sheshbazzar"], a:"Zerubbabel"},
+  ]},
+Zechariah: { easy: [
+    {t:"mc", ref:"Zechariah", q:"Like Haggai, Zechariah encouraged the exiles to rebuild what after returning from exile?", opts:["The Temple","The walls","The palace","The altar of incense"], a:"The Temple"},
+  ], medium: [
+    {t:"mc", ref:"Zechariah 5", q:"Among his many visions, Zechariah sees a flying what?", opts:["Scroll","Chariot","Lampstand alone","Eagle"], a:"Scroll"},
+  ], hard: [
+    {t:"mc", ref:"Zechariah 9", q:"Zechariah contains a prophecy later connected to Jesus entering Jerusalem how?", opts:["Humbly, riding on a donkey","Triumphantly on a warhorse","Carried by angels","Walking on water"], a:"Humbly, riding on a donkey"},
+  ]},
+Malachi: { easy: [
+    {t:"mc", ref:"Malachi", q:"Malachi is the final book of the Old Testament in most Christian Bibles. What era does it address?", opts:["After the exile, during Temple worship's restoration","Before the exodus","During the united kingdom","During the Babylonian exile"], a:"After the exile, during Temple worship's restoration"},
+  ], medium: [
+    {t:"mc", ref:"Malachi 3-4", q:"Malachi's closing prophecy anticipates a messenger being sent, later associated with which prophet's return?", opts:["Elijah","Moses","Isaiah","Samuel"], a:"Elijah"},
+  ], hard: [
+    {t:"mc", ref:"Malachi", q:"Malachi rebukes the priests for offering God what kind of sacrifices?", opts:["Blemished/defective animals","Too many sacrifices","No sacrifices at all","Sacrifices at the wrong time"], a:"Blemished/defective animals"},
+  ]},
+"2 Corinthians": { easy: [
+    {t:"mc", ref:"2 Corinthians", q:"2 Corinthians was written by whom?", opts:["Paul","Peter","John","Timothy"], a:"Paul"},
+    {t:"fill", ref:"2 Corinthians 5:7", q:"\"...for we walk by ___, not by sight.\"", opts:["faith","hope","the Spirit","grace"], a:"faith"},
+  ], medium: [
+    {t:"mc", ref:"2 Corinthians 12", q:"Paul describes receiving a \"thorn in the flesh\" to keep him humble. What does he call it?", opts:["A messenger of Satan","A demon","A disease","A curse from enemies"], a:"A messenger of Satan"},
+  ], hard: [
+    {t:"mc", ref:"2 Corinthians 5", q:"2 Corinthians 5 describes believers becoming what \"in Christ\"?", opts:["A new creation","Perfect immediately","Angels","Priests only"], a:"A new creation"},
+  ]},
+Colossians: { easy: [
+    {t:"mc", ref:"Colossians", q:"Colossians was written by whom?", opts:["Paul","Peter","James","John"], a:"Paul"},
+    {t:"fill", ref:"Colossians 3:17", q:"\"And whatever you do, in word or deed, do everything in the name of the Lord ___.\"", opts:["Jesus","Almighty","of hosts","our God"], a:"Jesus"},
+  ], medium: [
+    {t:"mc", ref:"Colossians 1", q:"Colossians emphasizes the supremacy of whom over all creation?", opts:["Christ","Moses","The angels","The emperor"], a:"Christ"},
+  ], hard: [
+    {t:"mc", ref:"Colossians", q:"Colossians was likely written to counter a false teaching mixing Christianity with what?", opts:["Mystical/philosophical practices and legalism","Roman emperor worship only","Judaizing alone","Greek mythology retellings"], a:"Mystical/philosophical practices and legalism"},
+  ]},
+"1 Thessalonians": { easy: [
+    {t:"mc", ref:"1 Thessalonians", q:"1 Thessalonians, one of Paul's earliest letters, encourages a church facing what?", opts:["Persecution","Famine","A plague","Civil war"], a:"Persecution"},
+  ], medium: [
+    {t:"mc", ref:"1 Thessalonians 4", q:"1 Thessalonians 4 gives hope regarding what future event?", opts:["The return of Christ","The rebuilding of the Temple","The fall of Rome","A coming famine"], a:"The return of Christ"},
+  ], hard: [
+    {t:"mc", ref:"1 Thessalonians 5", q:"1 Thessalonians 5 famously instructs believers to do what \"without ceasing\"?", opts:["Pray","Fast","Preach","Sing"], a:"Pray"},
+    {t:"fill", ref:"1 Thessalonians 5:16-18", q:"\"Rejoice always, pray without ceasing, give thanks in all ___.\"", opts:["circumstances","things","seasons","situations"], a:"circumstances"},
+  ]},
+"2 Thessalonians": { easy: [
+    {t:"mc", ref:"2 Thessalonians", q:"2 Thessalonians addresses confusion in the church about what future event?", opts:["The day of the Lord","The Temple's destruction","Persecution ending","Paul's death"], a:"The day of the Lord"},
+  ], medium: [
+    {t:"mc", ref:"2 Thessalonians 3", q:"2 Thessalonians rebukes some believers for being idle and gives what principle?", opts:["\"If anyone is not willing to work, let him not eat\"","\"Love your neighbor as yourself\"","\"Do not steal\"","\"Honor your father and mother\""], a:"\"If anyone is not willing to work, let him not eat\""},
+  ], hard: [
+    {t:"mc", ref:"2 Thessalonians 2", q:"2 Thessalonians 2 warns of a coming \"man of lawlessness\" before what event?", opts:["The day of the Lord","The Temple's rebuilding","Paul's return to Thessalonica","The final famine"], a:"The day of the Lord"},
+    {t:"fill", ref:"2 Thessalonians 3:10", q:"\"If anyone is not willing to work, let him not ___.\"", opts:["eat","rest","speak","judge"], a:"eat"},
+  ]},
+"1 Timothy": { easy: [
+    {t:"mc", ref:"1 Timothy", q:"1 Timothy is a letter from Paul giving instructions to a young church leader named whom?", opts:["Timothy","Titus","Silas","Barnabas"], a:"Timothy"},
+  ], medium: [
+    {t:"mc", ref:"1 Timothy 3", q:"1 Timothy gives qualifications for which two church roles?", opts:["Overseers (elders) and deacons","Apostles and prophets","Kings and priests","Judges and scribes"], a:"Overseers (elders) and deacons"},
+  ], hard: [
+    {t:"mc", ref:"1 Timothy 6", q:"1 Timothy 6 warns that the love of what is a root of all kinds of evil?", opts:["Money","Power","Fame","Pleasure"], a:"Money"},
+    {t:"fill", ref:"1 Timothy 6:10", q:"\"For the love of ___ is a root of all kinds of evils.\"", opts:["money","power","self","the world"], a:"money"},
+  ]},
+"2 Timothy": { easy: [
+    {t:"mc", ref:"2 Timothy", q:"2 Timothy, considered Paul's final letter, was written from where?", opts:["Prison (Rome)","Ephesus","Corinth","Athens"], a:"Prison (Rome)"},
+  ], medium: [
+    {t:"mc", ref:"2 Timothy 3", q:"2 Timothy states that all Scripture is what?", opts:["Breathed out by God and useful for teaching","Written only by prophets","Optional for believers","Only for church leaders"], a:"Breathed out by God and useful for teaching"},
+  ], hard: [
+    {t:"mc", ref:"2 Timothy 4", q:"Near the end of 2 Timothy, Paul says he has fought the good fight and finished what?", opts:["The race","His ministry alone","His imprisonment","His writings"], a:"The race"},
+    {t:"fill", ref:"2 Timothy 4:7", q:"\"I have fought the good fight, I have finished the race, I have kept the ___.\"", opts:["faith","course","hope","word"], a:"faith"},
+  ]},
+Titus: { easy: [
+    {t:"mc", ref:"Titus", q:"Titus, like Timothy, received instructions from Paul about leading a church on which island?", opts:["Crete","Cyprus","Malta","Patmos"], a:"Crete"},
+  ], medium: [
+    {t:"mc", ref:"Titus 1", q:"Titus, like 1 Timothy, gives qualifications for which church role?", opts:["Elders/overseers","Apostles","Kings","Prophets"], a:"Elders/overseers"},
+  ], hard: [
+    {t:"mc", ref:"Titus 3", q:"Titus emphasizes that believers are saved not by works but by God's what?", opts:["Mercy","Law","Wealth","Sacrifice system"], a:"Mercy"},
+    {t:"fill", ref:"Titus 3:5", q:"\"...he saved us, not because of works done by us in righteousness, but according to his own ___.\"", opts:["mercy","law","glory","plan"], a:"mercy"},
+  ]},
+Philemon: { easy: [
+    {t:"mc", ref:"Philemon", q:"Philemon is a short personal letter from Paul appealing on behalf of a runaway slave named whom?", opts:["Onesimus","Timothy","Titus","Epaphras"], a:"Onesimus"},
+  ], medium: [
+    {t:"mc", ref:"Philemon", q:"Paul asks Philemon to receive the runaway slave back as what?", opts:["A beloved brother","A hired servant","A stranger","A prisoner"], a:"A beloved brother"},
+    {t:"fill", ref:"Philemon 1:16", q:"\"...no longer as a slave but more than a slave, as a beloved ___.\"", opts:["brother","friend","son","partner"], a:"brother"},
+  ], hard: [
+    {t:"mc", ref:"Philemon", q:"Philemon is one of Paul's letters written while he was in what circumstance?", opts:["Imprisoned","On trial in Athens","Traveling to Spain","In hiding"], a:"Imprisoned"},
+  ]},
+Hebrews: { easy: [
+    {t:"mc", ref:"Hebrews", q:"Hebrews argues for the superiority of Christ over what Old Testament system?", opts:["The Levitical priesthood","The kingship of David","The prophetic office alone","The wisdom literature"], a:"The Levitical priesthood"},
+  ], medium: [
+    {t:"mc", ref:"Hebrews 11", q:"Hebrews 11 is often called the \"Hall of ___\" for its list of examples of trust in God.", opts:["Faith","Fame","Heroes","Kings"], a:"Faith"},
+    {t:"fill", ref:"Hebrews 4:12", q:"\"...the word of God is living and active, sharper than any two-edged ___.\"", opts:["sword","blade","weapon","spear"], a:"sword"},
+  ], hard: [
+    {t:"fill", ref:"Hebrews 11:1", q:"\"Now faith is the assurance of things hoped for, the conviction of things not ___.\"", opts:["seen","known","certain","proven"], a:"seen"},
+    {t:"fill", ref:"Hebrews 11:6", q:"\"And without ___ it is impossible to please him.\"", opts:["faith","works","prayer","obedience"], a:"faith"},
+  ]},
+"1 Peter": { easy: [
+    {t:"mc", ref:"1 Peter", q:"1 Peter was written to encourage believers facing what?", opts:["Suffering and persecution","Wealth and temptation","Famine","Civil war"], a:"Suffering and persecution"},
+  ], medium: [
+    {t:"fill", ref:"1 Peter 5:7", q:"\"...casting all your anxieties on him, because he ___ for you.\"", opts:["cares","provides","watches","waits"], a:"cares"},
+  ], hard: [
+    {t:"mc", ref:"1 Peter 2", q:"1 Peter 2 describes believers collectively as what kind of priesthood?", opts:["A royal priesthood","A Levitical priesthood","A prophetic order","A kingly dynasty"], a:"A royal priesthood"},
+  ]},
+"2 Peter": { easy: [
+    {t:"mc", ref:"2 Peter", q:"2 Peter warns believers about the danger of what?", opts:["False teachers","Foreign invasion","Famine","Persecution by Rome only"], a:"False teachers"},
+  ], medium: [
+    {t:"mc", ref:"2 Peter 3", q:"2 Peter 3 addresses scoffers who doubt what future event?", opts:["Christ's return","The resurrection of Jesus","The Temple's rebuilding","Peter's death"], a:"Christ's return"},
+    {t:"fill", ref:"2 Peter 3:10", q:"\"...the day of the Lord will come like a thief in the ___.\"", opts:["night","dark","end","last days"], a:"night"},
+  ], hard: [
+    {t:"mc", ref:"2 Peter 1", q:"2 Peter 1 says prophecy did not come by human will but as men were carried along by whom?", opts:["The Holy Spirit","Angels","Kings","Priests"], a:"The Holy Spirit"},
+  ]},
+"1 John": { easy: [
+    {t:"order", ref:"1 John 4:8", verse:"God is love.", q:"Arrange the verse in order:"},
+  ], medium: [
+    {t:"mc", ref:"1 John", q:"1 John stresses that whoever does not love does not know whom?", opts:["God","Christ alone","The church","The Spirit"], a:"God"},
+  ], hard: [
+    {t:"mc", ref:"1 John 1", q:"1 John opens by testifying about the Word of life that the apostles had done what with?", opts:["Seen, heard, and touched","Only heard about","Read in Scripture","Dreamed about"], a:"Seen, heard, and touched"},
+  ]},
+"2 John": { easy: [
+    {t:"mc", ref:"2 John", q:"2 John is written to which recipient?", opts:["An elect lady and her children","The church at Corinth","Timothy","The seven churches"], a:"An elect lady and her children"},
+    {t:"fill", ref:"2 John 1:6", q:"\"And this is love, that we walk according to his ___.\"", opts:["commandments","truth","word","Spirit"], a:"commandments"},
+  ], medium: [
+    {t:"mc", ref:"2 John", q:"2 John, like 1 John, warns strongly against what?", opts:["Deceivers who deny Christ","Idle believers","Church leaders","Foreign nations"], a:"Deceivers who deny Christ"},
+  ], hard: [
+    {t:"mc", ref:"2 John", q:"2 John is one of the shortest books in the Bible, along with which other letter of John?", opts:["3 John","1 John","Jude","Philemon"], a:"3 John"},
+  ]},
+"3 John": { easy: [
+    {t:"mc", ref:"3 John", q:"3 John is addressed to an individual named whom?", opts:["Gaius","Timothy","Titus","Philemon"], a:"Gaius"},
+  ], medium: [
+    {t:"mc", ref:"3 John", q:"3 John commends Gaius for showing hospitality to whom?", opts:["Traveling missionaries/brothers","Roman officials","Foreign kings","Widows only"], a:"Traveling missionaries/brothers"},
+    {t:"fill", ref:"3 John 1:4", q:"\"I have no greater joy than to hear that my children are walking in the ___.\"", opts:["truth","faith","light","Spirit"], a:"truth"},
+  ], hard: [
+    {t:"mc", ref:"3 John", q:"3 John also criticizes a church leader named whom for his pride and unkindness?", opts:["Diotrephes","Demetrius","Onesimus","Sanballat"], a:"Diotrephes"},
+  ]},
+Jude: { easy: [
+    {t:"mc", ref:"Jude", q:"Jude, a short letter, warns the church mainly about what?", opts:["False teachers who had crept in","Foreign invasion","Famine","Persecution by Rome"], a:"False teachers who had crept in"},
+  ], medium: [
+    {t:"mc", ref:"Jude", q:"Jude identifies himself as a servant of Jesus Christ and brother of which other New Testament writer?", opts:["James","Peter","John","Paul"], a:"James"},
+  ], hard: [
+    {t:"mc", ref:"Jude", q:"Jude's letter ends with a well-known doxology praising God's ability to do what?", opts:["Keep believers from stumbling","Judge the nations","Rebuild the Temple","Defeat Rome"], a:"Keep believers from stumbling"},
+    {t:"fill", ref:"Jude 1:24", q:"\"Now to him who is able to keep you from ___...\"", opts:["stumbling","falling away","sinning","doubting"], a:"stumbling"},
+  ]}
+};
+const ALL_BOOKS = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"];
+
+function bookHasType(book, type){
+  const b = BANK[book];
+  if(!b) return false;
+  return ["easy","medium","hard"].some(d => (b[d]||[]).some(q=>q.t===type));
+}
+
+/* =========================================================
+   SAVE STATE
+   ========================================================= */
+const SAVE_KEY = "scriptureQuestSave_v2";
+function loadSave(){
+  try{ const raw = localStorage.getItem(SAVE_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return {stars:{}, xp:0, coins:0, streak:0, lastPlayDate:null};
+}
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function bumpStreak(){
+  const today = todayStr();
+  if(save.lastPlayDate === today) return;
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yesterday = y.toISOString().slice(0,10);
+  save.streak = (save.lastPlayDate === yesterday) ? save.streak+1 : 1;
+  save.lastPlayDate = today; writeSave();
+}
+function refreshTopbar(){
+  document.getElementById('streakVal').textContent = save.streak;
+  document.getElementById('coinVal').textContent = save.coins;
+  const level = Math.floor(save.xp/100)+1;
+  document.getElementById('xpLevelVal').textContent = level;
+  document.getElementById('xpFill').style.width = (save.xp%100)+'%';
+}
+refreshTopbar();
+function starsToStr(n){ return n>0 ? "⭐".repeat(n) : ""; }
+function saveKey(book,mode,diff){ return book+'||'+mode+'||'+diff; }
+
+/* =========================================================
+   STEP NAVIGATION
+   ========================================================= */
+let chosenBook=null, chosenMode=null, chosenDiff=null;
+const screens = ['stepBook','stepMode','stepDiff','game','result'];
+function showScreen(id){ screens.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id)); }
+
+const bookGrid = document.getElementById('bookGrid');
+ALL_BOOKS.forEach(b=>{
+  const btn = document.createElement('button');
+  btn.className = 'book-chip';
+  btn.textContent = b;
+  const best = Object.keys(save.stars).filter(k=>k.startsWith(b+'||')).reduce((m,k)=>Math.max(m, save.stars[k]),0);
+  if(best>0){ const s = document.createElement('span'); s.className='badge'; s.textContent = '⭐'+best; btn.appendChild(s); }
+  btn.onclick = ()=> selectBook(b);
+  bookGrid.appendChild(btn);
+});
+function selectBook(b){
+  chosenBook = b;
+  document.getElementById('modeBookLabel').textContent = b;
+  document.getElementById('modeTrivia').classList.remove('disabled');
+  document.getElementById('modeTrivia').disabled = false;
+  const fillOk = bookHasType(b,'fill');
+  const orderOk = bookHasType(b,'order');
+  document.getElementById('modeFill').classList.toggle('disabled', !fillOk);
+  document.getElementById('modeFill').disabled = !fillOk;
+  document.getElementById('modeOrder').classList.toggle('disabled', !orderOk);
+  document.getElementById('modeOrder').disabled = !orderOk;
+  showScreen('stepMode');
+}
+document.getElementById('backToBook').onclick = ()=> showScreen('stepBook');
+
+function selectMode(mode){
+  chosenMode = mode;
+  document.getElementById('diffLabel').textContent = `${chosenBook} · ${mode==='trivia'?'Trivia':mode==='fill'?'Fill in the Blank':'Verse Builder'}`;
+  document.querySelectorAll('#diffChips .chip').forEach(c=>{
+    c.classList.remove('selected');
+    const d = c.dataset.diff;
+    const st = save.stars[saveKey(chosenBook,mode,d)] || 0;
+    let mini = c.querySelector('.mini-star'); if(mini) mini.remove();
+    if(st>0){ const m=document.createElement('span'); m.className='mini-star'; m.textContent=starsToStr(st); c.appendChild(m); }
+  });
+  chosenDiff = null;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('aiStatus').textContent = '';
+  showScreen('stepDiff');
+}
+document.getElementById('modeTrivia').onclick = ()=>{ if(!document.getElementById('modeTrivia').disabled) selectMode('trivia'); };
+document.getElementById('modeFill').onclick = ()=>{ if(!document.getElementById('modeFill').disabled) selectMode('fill'); };
+document.getElementById('modeOrder').onclick = ()=>{ if(!document.getElementById('modeOrder').disabled) selectMode('order'); };
+document.getElementById('backToMode').onclick = ()=> showScreen('stepMode');
+
+document.querySelectorAll('#diffChips .chip').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('#diffChips .chip').forEach(c=>c.classList.remove('selected'));
+    btn.classList.add('selected'); chosenDiff = btn.dataset.diff;
+    document.getElementById('playBtn').disabled = false;
+  };
+});
+document.getElementById('playBtn').onclick = async ()=>{ await beginLevel(); };
+
+/* =========================================================
+   GAMEPLAY ENGINE  (fully static question bank — no AI at play time)
+   ========================================================= */
+let quiz = [], idx = 0, lives = 3, combo = 0, correctCount = 0, coinsThisRound = 0, xpThisRound = 0;
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function matchesMode(q){ return q.t===chosenMode || (chosenMode==='trivia' && q.t==='mc'); }
+
+function buildPool(){
+  const book = BANK[chosenBook];
+  if(!book) return [];
+  let pool = (book[chosenDiff]||[]).filter(matchesMode).map(q=>({...q}));
+  if(pool.length===0){
+    // fall back to any difficulty for this book/mode if the chosen tier is thin
+    ["easy","medium","hard"].forEach(d=>{ (book[d]||[]).forEach(q=>{ if(matchesMode(q)) pool.push({...q}); }); });
+  }
+  return pool;
+}
+
+async function beginLevel(){
+  document.getElementById('aiStatus').textContent = '';
+  let pool = buildPool();
+  if(pool.length===0){
+    document.getElementById('aiStatus').textContent = '⚠️ No questions available for this combination yet.';
+    return;
+  }
+  shuffle(pool);
+  quiz = pool.slice(0, Math.min(8, pool.length));
+  idx=0; lives=3; combo=0; correctCount=0; coinsThisRound=0; xpThisRound=0;
+  showScreen('game');
+  renderQ();
+}
+
+function renderQ(){
+  const q = quiz[idx];
+  document.getElementById('progress').textContent = `Q${idx+1}/${quiz.length}`;
+  document.getElementById('livesLive').textContent = '❤️'.repeat(Math.max(lives,0)) + '🖤'.repeat(3-Math.max(lives,0));
+  document.getElementById('comboLine').textContent = combo>=2 ? `🔥 Combo x${combo}` : '';
+  document.getElementById('qref').textContent = q.ref + (q.t==='fill' ? ' — fill in the blank' : '');
+  document.getElementById('qtext').textContent = q.q;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('nextBtn').classList.add('hidden');
+
+  const mcArea = document.getElementById('mcArea');
+  const orderArea = document.getElementById('orderArea');
+  if(q.t === 'order'){
+    mcArea.classList.add('hidden'); orderArea.classList.remove('hidden');
+    renderOrderQ(q);
+  } else {
+    orderArea.classList.add('hidden'); mcArea.classList.remove('hidden');
+    mcArea.innerHTML = '';
+    shuffle([...q.opts]).forEach(o=>{
+      const b = document.createElement('button');
+      b.className='opt'; b.textContent=o;
+      b.onclick=()=>answer(o===q.a, b, q);
+      mcArea.appendChild(b);
+    });
+  }
+}
+
+let orderPlaced = [];
+function renderOrderQ(q){
+  const tokens = q.verse.split(' ').map((w,i)=>({w, id:i, used:false}));
+  orderPlaced = [];
+  function redraw(){
+    const strip = document.getElementById('orderStrip');
+    const bank = document.getElementById('orderBank');
+    strip.innerHTML=''; bank.innerHTML='';
+    orderPlaced.forEach(tok=>{
+      const b = document.createElement('button'); b.className='tok placed'; b.textContent=tok.w;
+      b.onclick=()=>{ orderPlaced = orderPlaced.filter(t=>t.id!==tok.id); tokens.find(t=>t.id===tok.id).used=false; redraw(); };
+      strip.appendChild(b);
+    });
+    tokens.filter(t=>!t.used).forEach(tok=>{
+      const b = document.createElement('button'); b.className='tok'; b.textContent=tok.w;
+      b.onclick=()=>{ tok.used=true; orderPlaced.push(tok); redraw(); };
+      bank.appendChild(b);
+    });
+    document.getElementById('orderCheckBtn').disabled = orderPlaced.length !== tokens.length;
+  }
+  shuffle(tokens);
+  redraw();
+  document.getElementById('orderCheckBtn').onclick = ()=>{
+    const built = orderPlaced.map(t=>t.w).join(' ');
+    answer(built === q.verse, null, q, built);
+  };
+}
+
+function answer(correct, btnEl, q){
+  document.querySelectorAll('#mcArea .opt').forEach(b=>{
+    b.disabled = true;
+    if(b.textContent===q.a) b.classList.add('right');
+    else if(b===btnEl) b.classList.add('wrong');
+  });
+  document.querySelectorAll('#orderBank .tok, #orderStrip .tok').forEach(b=>b.disabled=true);
+  document.getElementById('orderCheckBtn').disabled = true;
+  registerResult(correct, q);
+  if(correct){
+    document.getElementById('feedback').textContent = combo>=2 ? `✅ Correct! 🔥 x${combo} combo` : '✅ Correct!';
+  } else {
+    document.getElementById('feedback').textContent = `❌ Correct: ${q.t==='order' ? q.verse : q.a}`;
+  }
+  document.getElementById('nextBtn').classList.remove('hidden');
+}
+
+function registerResult(correct, q){
+  if(correct){
+    combo++; correctCount++;
+    const mult = 1 + Math.min(combo-1, 4)*0.25;
+    coinsThisRound += Math.round(10*mult);
+    xpThisRound += 5;
+  } else {
+    combo = 0; lives--;
+  }
+  document.getElementById('livesLive').textContent = '❤️'.repeat(Math.max(lives,0)) + '🖤'.repeat(3-Math.max(lives,0));
+}
+
+document.getElementById('nextBtn').onclick = ()=>{
+  idx++;
+  if(lives<=0){ finishLevel(false); }
+  else if(idx>=quiz.length){ finishLevel(true); }
+  else { renderQ(); }
+};
+
+function finishLevel(passed){
+  showScreen('result');
+  bumpStreak();
+  let stars = 0;
+  if(passed){
+    const pct = correctCount/quiz.length;
+    if(lives===3 && pct===1) stars = 3;
+    else if(pct>=0.7) stars = 2;
+    else stars = 1;
+  }
+  if(passed && stars>0){
+    const key = saveKey(chosenBook, chosenMode, chosenDiff);
+    save.stars[key] = Math.max(save.stars[key]||0, stars);
+  }
+  save.coins += coinsThisRound;
+  save.xp += xpThisRound + (passed ? 20 : 0);
+  writeSave();
+  refreshTopbar();
+
+  const emoji = !passed ? '💔' : stars===3 ? '👑' : stars===2 ? '🎉' : '🙂';
+  const title = !passed ? 'Out of hearts — try again!' : stars===3 ? 'Perfect!' : stars===2 ? 'Well done!' : 'Level cleared!';
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultStars').textContent = passed ? (starsToStr(stars) || '⭐') : '';
+  document.getElementById('finalScore').textContent = `${correctCount} / ${quiz.length} correct`;
+  document.getElementById('coinsEarnedLine').textContent = `🪙 +${coinsThisRound}`;
+  document.getElementById('xpEarnedLine').textContent = `✨ +${xpThisRound + (passed?20:0)} XP`;
+  document.getElementById('resultSub').textContent = `${chosenBook} · ${chosenMode==='trivia'?'Trivia':chosenMode==='fill'?'Fill in the Blank':'Verse Builder'} · ${chosenDiff}`;
+}
+document.getElementById('playAgainBtn').onclick = ()=> beginLevel();
+document.getElementById('chooseAnotherBtn').onclick = ()=> showScreen('stepBook');
+</script>
+</body>
+</html>
